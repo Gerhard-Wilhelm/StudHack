@@ -25,3 +25,17 @@ Danach `.env` öffnen und Uni-Kennung und Passwort eintragen.
 ```
 
 Downloads landen in `Studium Vault/06 Anhänge/<Kürzel>/`, der Bericht in `reports/`.
+
+## Importer
+
+Überträgt Karteikarten und Verständnisfragen aus den Wochennotizen nach Supabase.
+Vorher in `.env` die Supabase-Werte eintragen (siehe `.env.example`).
+
+```bash
+.venv/bin/python -m importer.import_notes                              # Trockenlauf, alle Notizen
+.venv/bin/python -m importer.import_notes --notiz "IuF W02"            # nur eine Notiz
+.venv/bin/python -m importer.import_notes --notiz "IuF W02" --schreiben  # wirklich hochladen
+.venv/bin/python -m importer.import_notes --schreiben                  # alle Notizen hochladen
+```
+
+Ohne `--schreiben` wird nichts verändert. Ein erneuter Lauf legt keine Doppelten an.

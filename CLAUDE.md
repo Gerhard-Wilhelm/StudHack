@@ -45,11 +45,12 @@ Bestehend:
 - `scanner/extract.py`: Text aus PDFs nach `cache/text/`
 - `state/state.json`: bereits geladene Dateien (lokal, nicht im Repository)
 - `reports/`: Berichte über neue Materialien (lokal, nicht im Repository)
+- `importer/import_notes.py`: Karteikarten und Verständnisfragen aus den Wochennotizen nach Supabase (Standard Trockenlauf, `--schreiben` lädt hoch)
+- `supabase/migrations/`: Datenmodell (Tabellen items, card_states, reviews)
 
 Geplant:
-- `importer/`: Wochennotizen aus dem Vault in Lernobjekte überführen
 - `generator/`: neue Folien zu Notiz und Fragen
-- `supabase/migrations/`, `supabase/functions/`
+- `supabase/functions/`: Edge Functions
 - `app/`: PWA
 
 ## Lernobjekte
