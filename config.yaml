@@ -1,0 +1,49 @@
+# Basis-URL der Stud.IP Instanz der MLU
+studip_url: https://studip.uni-halle.de
+
+# Zielordner für Downloads: <vault>/06 Anhänge/<Kürzel>/
+vault: ~/StudHack/Studium Vault
+
+# Module mit ihren Stud.IP Kurs-IDs (Vorlesung, Übung, ...)
+# Kurs-IDs aller belegten Kurse zeigt: python -m scanner.scan --list-courses
+module:
+  IuF:
+    name: Investition und Finanzierung
+    kurse:
+      - 81f81ae7baa808badb637d2f4d732c4d  # Vorlesung
+      - af7454718401939d38182c6bf0b25f55  # Übung
+  STA1:
+    name: Statistik 1
+    kurse:
+      - 264f378b7f9664035f809c27e9fce03e  # Vorlesung + Übung
+      - 37204851555a2ecc84e7258441cbce32  # Zusatzübung 3
+  PuL:
+    name: Produktion und Logistik
+    kurse:
+      - 2976724c089d4d9e1d333a449ae80c98  # Vorlesung
+      - d29a1ff8b254e715ef26a7bc7f931c8b  # Übung
+  IÖ:
+    name: Internet-Ökonomie
+    kurse:
+      - b6d2493d583a778508e0c9d041da70e6  # Vorlesung
+      - 1b3da34765750152148d18c663c09228  # Übung
+  BIL:
+    name: Bilanzierung
+    kurse:
+      - 8e45c0a3fc588bcd21e40256800b349e  # Vorlesung
+      - c9247bc89bfb83ffb40c909860dfe0e4  # Übung
+  MAK:
+    name: Makroökonomie
+    kurse:
+      - 7b19483ee042bc641b6724b7fdce8d1d  # Vorlesung
+      - b2ba178ba0f1908e3e56e100f5757d94  # Übung
+  WiPo:
+    name: Wirtschaftspolitik
+    kurse:
+      - 566c5d99604d8895bce97b1e5f24b254  # Vorlesung
+      - c996c0eb0a08c74ee101f2201f15e2f9  # Übung Ü6
+  GVWL:
+    name: Grundlagen der Volkswirtschaftslehre
+    kurse:
+      - dafc598b81d6c0409c33fa2dc1b479a0  # Vorlesung
+      - 16ce990bb0338922de30e141b45fbb95  # Übung
