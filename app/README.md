@@ -1,0 +1,52 @@
+# Lernkartei (PWA)
+
+iPhone-App zum Abfragen der freigegebenen Lernobjekte mit FSRS.
+
+## Einrichten
+
+```bash
+cd app
+npm install
+cp .env.example .env.local
+```
+
+In `.env.local` die Projekt-URL und den Publishable Key aus Supabase
+eintragen (Project Settings, API). Die Datei bleibt lokal.
+
+## Befehle
+
+- `npm run dev`: Entwicklungsserver, auch im WLAN erreichbar
+- `npm test`: Tests für Warteschlange, FSRS und Darstellung
+- `npm run build`: Typprüfung und Build nach `dist/`
+
+Ohne `.env.local` läuft nur der Demo-Modus.
+
+## Supabase
+
+- Registrierung in Supabase Auth ausschalten, deinen Nutzer im Dashboard
+  anlegen.
+- Unter Authentication, URL Configuration die Adresse der App als Site URL
+  eintragen.
+- Die App liest `card_states` mit den zugehörigen `items` (nur Status
+  `freigegeben`), aktualisiert `card_states` und legt Zeilen in `reviews` an.
+  Ein Lernobjekt ohne Zeile in `card_states` erscheint nicht. Der Importer legt
+  diese Zeile beim Hochladen an.
+
+## Cloudflare Pages
+
+- Root directory: `app`
+- Build command: `npm run build`
+- Build output directory: `dist`
+- Umgebungsvariablen: `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`
+
+## Auf dem iPhone installieren
+
+Seite in Safari öffnen, Teilen, "Zum Home-Bildschirm".
+
+## Hinweise
+
+- Das Limit für neue Karten pro Tag und der Tageszähler liegen im Speicher des
+  Geräts. Bei mehreren Geräten zählt jedes für sich.
+- Bewertungen, die offline entstehen, werden gemerkt und beim nächsten Laden
+  gesendet.
+- Am Rechner: Leertaste deckt auf, 1 bis 4 bewerten.

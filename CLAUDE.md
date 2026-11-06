@@ -47,11 +47,12 @@ Bestehend:
 - `reports/`: Berichte über neue Materialien (lokal, nicht im Repository)
 - `importer/import_notes.py`: Karteikarten und Verständnisfragen aus den Wochennotizen nach Supabase (Standard Trockenlauf, `--schreiben` lädt hoch)
 - `supabase/migrations/`: Datenmodell (Tabellen items, card_states, reviews)
+- `app/`: PWA (Vite, React, TypeScript). Login, Startseite, Lernen mit FSRS,
+  Demo-Modus. Schlüssel in `app/.env.local`, Details in `app/README.md`
 
 Geplant:
 - `generator/`: neue Folien zu Notiz und Fragen
 - `supabase/functions/`: Edge Functions
-- `app/`: PWA
 
 ## Lernobjekte
 
