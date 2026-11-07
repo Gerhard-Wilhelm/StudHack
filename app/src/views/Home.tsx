@@ -6,6 +6,7 @@ function plural(n: number, one: string, many: string) {
 
 export function Home(props: {
   overview: Overview
+  names: Record<string, string>
   pending: number
   onStudy: () => void
   onOpenModule: (module: string) => void
@@ -43,7 +44,10 @@ export function Home(props: {
             return (
               <li key={m.module}>
                 <button className={`module ${empty ? 'is-empty' : ''}`} onClick={() => props.onOpenModule(m.module)}>
-                  <span className="module-name">{m.module}</span>
+                  <span className="module-label">
+                    <span className="module-name">{m.module}</span>
+                    {props.names[m.module] && <span className="module-sub">{props.names[m.module]}</span>}
+                  </span>
                   <span className="module-counts">
                     <span className="count due" aria-label={`${m.due} fällig`}>{m.due}</span>
                     <span className="count fresh" aria-label={`${m.fresh} neu`}>{m.fresh}</span>

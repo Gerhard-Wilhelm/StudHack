@@ -131,6 +131,13 @@ describe('Lesemodus', () => {
     expect(html).not.toContain('src=')
   })
 
+  it('öffnet Links außerhalb der App und entschärft andere Schemata', () => {
+    const html = renderMarkdown('[Stud.IP](https://studip.example/x) und [böse](javascript:alert(1))')
+    expect(html).toContain('<a href="https://studip.example/x" target="_blank" rel="noopener noreferrer">Stud.IP</a>')
+    expect(html).not.toContain('javascript:')
+    expect(html).toContain('böse')
+  })
+
   it('versteht Obsidian-Links mit escaptem Strich in Tabellen', () => {
     const html = renderMarkdown('| A | B |\n|---|---|\n| x | [[BA02.pdf#page=3\\|IuF S. 3]] |')
     expect(html).toContain('<td>IuF S. 3</td>')

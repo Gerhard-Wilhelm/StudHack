@@ -34,8 +34,9 @@ Ohne `.env.local` läuft nur der Demo-Modus.
 
 ## Lesemodus (Zusammenfassungen und Folienbilder)
 
-Einmalig die Migration `supabase/migrations/20261107120000_notizen.sql` im
-Supabase SQL Editor ausführen. Sie legt die Tabelle `notes` und den privaten
+Einmalig die Migrationen `supabase/migrations/20261107120000_notizen.sql` und
+`supabase/migrations/20261108120000_module.sql` im Supabase SQL Editor
+ausführen. Sie legen die Tabellen `notes` und `modules` und den privaten
 Bucket `folien` an.
 
 Danach im Ordner `Lernassistent`:
@@ -45,11 +46,12 @@ Danach im Ordner `Lernassistent`:
 .venv/bin/python -m importer.import_lesemodus --schreiben
 ```
 
-Der erste Aufruf ist ein Trockenlauf. Der zweite lädt die Notizen und die
-verkleinerten Bilder hoch. Danach nur noch nach Änderungen im Vault erneut
+Der erste Aufruf ist ein Trockenlauf. Der zweite lädt die Notizen, die
+Modulübersichten und die verkleinerten Bilder hoch. Danach nur noch nach Änderungen im Vault erneut
 aufrufen, Unverändertes wird übersprungen.
 
-In der App öffnet ein Tipp auf ein Modul die Wochenliste, ein Tipp auf eine
+In der App öffnet ein Tipp auf ein Modul die Wochenliste mit "Infos zum Modul"
+(Eckdaten, Ablauf, Lernmethoden), ein Tipp auf eine
 Woche die Notiz mit Bildern, Diagrammen und eingeklappten Lösungen. Unten gibt
 es "Karten dieser Woche lernen".
 

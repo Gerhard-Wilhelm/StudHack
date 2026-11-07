@@ -1,5 +1,5 @@
 import type { Counts } from '../lib/queue'
-import type { NoteSummary } from '../lib/types'
+import type { ModuleInfo, NoteSummary } from '../lib/types'
 
 export interface WeekRow {
   week: number | null
@@ -9,9 +9,11 @@ export interface WeekRow {
 
 export function ModuleView(props: {
   module: string
+  info?: ModuleInfo
   weeks: WeekRow[]
   notesError: string | null
   onOpenWeek: (week: number | null) => void
+  onOpenInfo: () => void
   onStudy: () => void
   onBack: () => void
 }) {
@@ -23,6 +25,15 @@ export function ModuleView(props: {
         <button className="link" onClick={props.onBack}>Zurück</button>
       </header>
       <h1 className="title">{props.module}</h1>
+      {props.info && (
+        <>
+          <p className="module-fullname">{props.info.name}</p>
+          <button className="info-row" onClick={props.onOpenInfo}>
+            <span>Infos zum Modul</span>
+            <span className="info-hint">Eckdaten, Ablauf, Lernmethoden</span>
+          </button>
+        </>
+      )}
 
       {props.notesError && <p className="note">Zusammenfassungen konnten nicht geladen werden: {props.notesError}</p>}
 

@@ -56,3 +56,10 @@ export interface Note extends NoteSummary {
   body: string
   source_file: string | null
 }
+
+/** Modulübersicht aus dem Vault. */
+export interface ModuleInfo {
+  module: string
+  name: string
+  body: string
+}

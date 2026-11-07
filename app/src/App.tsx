@@ -5,9 +5,10 @@ import { SupabaseStore } from './lib/store-supabase'
 import { supabase } from './lib/supabase'
 import { buildQueue, overview, weekCounts } from './lib/queue'
 import { countIntroduced, remainingNew } from './lib/settings'
-import type { NoteSummary, ReviewRecord, StudyCard } from './lib/types'
+import type { ModuleInfo, NoteSummary, ReviewRecord, StudyCard } from './lib/types'
 import { Home } from './views/Home'
 import { Login } from './views/Login'
+import { ModuleInfoView } from './views/ModuleInfo'
 import { ModuleView, type WeekRow } from './views/ModuleView'
 import { Settings } from './views/Settings'
 import { Study } from './views/Study'
@@ -17,6 +18,7 @@ type View =
   | { name: 'home' }
   | { name: 'settings' }
   | { name: 'module'; module: string }
+  | { name: 'info'; module: string }
   | { name: 'week'; module: string; week: number | null }
   | { name: 'study'; queue: StudyCard[]; back: View }
 
@@ -45,6 +47,7 @@ export function App() {
   const [cards, setCards] = useState<StudyCard[] | null>(null)
   const [notes, setNotes] = useState<NoteSummary[]>([])
   const [notesError, setNotesError] = useState<string | null>(null)
+  const [modules, setModules] = useState<ModuleInfo[]>([])
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<View>({ name: 'home' })
   const [pending, setPending] = useState(0)
@@ -75,6 +78,12 @@ export function App() {
       setNotesError(null)
     } catch (e) {
       setNotesError(e instanceof Error ? e.message : String(e))
+    }
+    try {
+      setModules(await store.loadModules())
+    } catch {
+      // ohne Tabelle modules (Migration fehlt) zeigt die App einfach keine Modulinfos
+      setModules([])
     }
   }, [store])
 
@@ -107,17 +116,19 @@ export function App() {
   const ov = useMemo(() => {
     if (!cards) return null
     const o = overview(cards, now, newLimit)
-    // Module, zu denen es nur Notizen und noch keine Karten gibt
+    // Module, zu denen es nur Notizen oder eine Übersicht und noch keine Karten gibt
     const known = new Set(o.modules.map((m) => m.module))
-    for (const n of notes) {
-      if (!known.has(n.module)) {
-        known.add(n.module)
-        o.modules.push({ module: n.module, due: 0, fresh: 0 })
+    for (const module of [...notes.map((n) => n.module), ...modules.map((m) => m.module)]) {
+      if (!known.has(module)) {
+        known.add(module)
+        o.modules.push({ module, due: 0, fresh: 0 })
       }
     }
     o.modules.sort((a, b) => a.module.localeCompare(b.module, 'de'))
     return o
-  }, [cards, notes, now, newLimit])
+  }, [cards, notes, modules, now, newLimit])
+
+  const moduleNames = useMemo(() => Object.fromEntries(modules.map((m) => [m.module, m.name])), [modules])
 
   function weekRows(module: string): WeekRow[] {
     const counts = cards ? weekCounts(cards, module, now, newLimit) : new Map()
@@ -205,12 +216,25 @@ export function App() {
     body = (
       <ModuleView
         module={view.module}
+        info={modules.find((m) => m.module === view.module)}
         weeks={weekRows(view.module)}
         notesError={notesError}
         onOpenWeek={(week) => setView({ name: 'week', module: view.module, week })}
+        onOpenInfo={() => setView({ name: 'info', module: view.module })}
         onStudy={() => startStudy({ module: view.module }, view)}
         onBack={() => setView({ name: 'home' })}
       />
+    )
+  } else if (view.name === 'info') {
+    const info = modules.find((m) => m.module === view.module)
+    const back = { name: 'module', module: view.module } as const
+    body = info ? (
+      <ModuleInfoView info={info} store={store} onBack={() => setView(back)} />
+    ) : (
+      <main className="page center">
+        <p className="note">Zu diesem Modul gibt es keine Übersicht.</p>
+        <button className="quiet" onClick={() => setView(back)}>Zurück</button>
+      </main>
     )
   } else if (view.name === 'week') {
     const row = weekRows(view.module).find((w) => w.week === view.week)
@@ -229,6 +253,7 @@ export function App() {
     body = (
       <Home
         overview={ov}
+        names={moduleNames}
         pending={pending}
         onStudy={() => startStudy({}, { name: 'home' })}
         onOpenModule={(module) => setView({ name: 'module', module })}

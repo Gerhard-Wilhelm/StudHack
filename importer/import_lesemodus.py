@@ -1,8 +1,8 @@
-"""Überträgt Wochennotizen und ihre Folienbilder für den Lesemodus der App nach Supabase.
+"""Überträgt Wochennotizen, Modulübersichten und Folienbilder für den Lesemodus nach Supabase.
 
 Standard ist ein Trockenlauf: Es wird nur angezeigt, was hochgeladen würde.
-Erst mit --schreiben werden Notizen in die Tabelle notes und Bilder in den
-privaten Bucket folien geschrieben.
+Erst mit --schreiben werden Notizen in die Tabelle notes, Modulübersichten in
+die Tabelle modules und Bilder in den privaten Bucket folien geschrieben.
 
 Aufruf (im Ordner Lernassistent):
   .venv/bin/python -m importer.import_lesemodus                     # Trockenlauf, alle Notizen
@@ -11,7 +11,8 @@ Aufruf (im Ordner Lernassistent):
   .venv/bin/python -m importer.import_lesemodus --schreiben         # wirklich hochladen
 
 Die Notiz wird ohne Frontmatter, Titelzeile und Abschnitt "Karteikarten" übernommen
-(die Karten liegen schon im Lernstapel). Eingebettete Bilder ![[<Bild>.png]] werden
+(die Karten liegen schon im Lernstapel). Von der Modulübersicht (<Modulname>.md im
+Modulordner) fallen "Wochen" (listet die App selbst) und "Offene Fragen" weg. Eingebettete Bilder ![[<Bild>.png]] werden
 verkleinert (JPEG, höchstens 1400 px breit) und als folien/<Kürzel>/<Bild>.jpg verlinkt.
 Unveränderte Notizen und Bilder werden übersprungen.
 """
@@ -39,6 +40,10 @@ MANIFEST = CACHE_DIR / "manifest.json"
 IMAGE_EMBED = re.compile(r"!\[\[([^\]|]+?\.(?:png|jpe?g))(?:\|[^\]]*)?\]\]", re.IGNORECASE)
 FRONTMATTER = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
 QUELLE = re.compile(r'^quelle:\s*"?\[\[(?:.*/)?([^\]|#/]+?\.pdf)', re.MULTILINE)
+KUERZEL = re.compile(r'^kuerzel:\s*"?([^"\n]+?)"?\s*$', re.MULTILINE)
+
+OHNE_IN_NOTIZ = ("Karteikarten",)
+OHNE_IN_UEBERSICHT = ("Wochen", "Offene Fragen")
 
 UMLAUTE = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "Ä": "Ae", "Ö": "Oe", "Ü": "Ue", "ß": "ss"})
 
@@ -84,12 +89,36 @@ class Notiz:
         }
 
 
-def ohne_abschnitt(text: str, titel: str) -> str:
-    """Entfernt einen Abschnitt der Ebene 2 samt Inhalt bis zur nächsten Überschrift dieser Ebene."""
+@dataclass
+class Modul:
+    modul: str
+    name: str
+    text: str
+    notiz: str
+    bilder: list[Bild]
+    fehlend: list[str]
+    hash: str = field(init=False)
+
+    def __post_init__(self):
+        self.hash = hashlib.sha256(f"{self.name}\n{self.text}".encode()).hexdigest()
+
+    def als_zeile(self, user_id: str) -> dict:
+        return {
+            "user_id": user_id,
+            "module": self.modul,
+            "name": self.name,
+            "body": self.text,
+            "origin_ref": self.notiz,
+            "content_hash": self.hash,
+        }
+
+
+def ohne_abschnitte(text: str, titel: tuple[str, ...]) -> str:
+    """Entfernt Abschnitte der Ebene 2 samt Inhalt bis zur nächsten Überschrift dieser Ebene."""
     out, skip = [], False
     for line in text.splitlines():
         if line.startswith("## "):
-            skip = line[3:].strip() == titel
+            skip = line[3:].strip() in titel
         if not skip:
             out.append(line)
     return "\n".join(out)
@@ -103,19 +132,13 @@ def finde_bild(name: str, modul: str, anhaenge: Path) -> Path | None:
     return treffer[0] if treffer else None
 
 
-def parse_note(path: Path, vault: Path) -> Notiz | None:
-    m = NOTE_NAME.match(path.stem)
-    if not m:
-        return None
-    modul, woche = m.group("modul"), int(m.group("woche"))
-    roh = path.read_text(encoding="utf-8")
+def aufbereiten(roh: str, modul: str, vault: Path, ohne: tuple[str, ...]) -> tuple[str, list[Bild], list[str]]:
+    """Frontmatter, Titelzeile und die genannten Abschnitte weg, Bilder auf den Bucket umgebogen."""
     fm = FRONTMATTER.match(roh)
-    quelle = QUELLE.search(fm.group(0)) if fm else None
     text = roh[fm.end():] if fm else roh
-
     # Titelzeile weg, sie steht als eigenes Feld in der Tabelle
     text = re.sub(r"\A\s*# [^\n]*\n", "", text)
-    text = ohne_abschnitt(text, "Karteikarten").strip() + "\n"
+    text = ohne_abschnitte(text, ohne).strip() + "\n"
 
     anhaenge = vault / "06 Anhänge"
     bilder: dict[str, Bild] = {}
@@ -131,10 +154,39 @@ def parse_note(path: Path, vault: Path) -> Notiz | None:
         bilder[pfad] = Bild(datei, pfad)
         return f"![{Path(name).stem}]({BUCKET}/{pfad})"
 
-    text = IMAGE_EMBED.sub(ersetze, text)
+    return IMAGE_EMBED.sub(ersetze, text), list(bilder.values()), fehlend
+
+
+def parse_note(path: Path, vault: Path) -> Notiz | None:
+    m = NOTE_NAME.match(path.stem)
+    if not m:
+        return None
+    modul, woche = m.group("modul"), int(m.group("woche"))
+    roh = path.read_text(encoding="utf-8")
+    fm = FRONTMATTER.match(roh)
+    quelle = QUELLE.search(fm.group(0)) if fm else None
+    text, bilder, fehlend = aufbereiten(roh, modul, vault, OHNE_IN_NOTIZ)
     titel = path.stem[m.end():].strip()
     return Notiz(modul, woche, titel, text, quelle.group(1) if quelle else None,
-                 str(path.relative_to(vault)), list(bilder.values()), fehlend)
+                 str(path.relative_to(vault)), bilder, fehlend)
+
+
+def parse_overview(path: Path, vault: Path) -> Modul | None:
+    """Übersichtsnotiz <Modulname>.md, das Kürzel steht im Frontmatter."""
+    roh = path.read_text(encoding="utf-8")
+    fm = FRONTMATTER.match(roh)
+    kuerzel = KUERZEL.search(fm.group(0)) if fm else None
+    if not kuerzel:
+        return None
+    modul = kuerzel.group(1).strip()
+    text, bilder, fehlend = aufbereiten(roh, modul, vault, OHNE_IN_UEBERSICHT)
+    return Modul(modul, path.stem, text, str(path.relative_to(vault)), bilder, fehlend)
+
+
+def find_overviews(vault: Path, modul: str | None) -> list[Path]:
+    pfade = [d / f"{d.name}.md" for d in sorted((vault / "01 Module").iterdir()) if (d / f"{d.name}.md").is_file()]
+    module = [m for m in (parse_overview(p, vault) for p in pfade) if m]
+    return [vault / m.notiz for m in module if not modul or m.modul == modul]
 
 
 def datei_hash(path: Path) -> str:
@@ -169,6 +221,19 @@ class Lesemodus(Supabase):
             json=[n.als_zeile(self.user_id) for n in notizen],
             headers={"Prefer": "resolution=merge-duplicates"}, timeout=60))
 
+    def existing_modules(self) -> dict[str, str]:
+        r = self._check(self.s.get(f"{self.url}/rest/v1/modules", params={
+            "select": "module,content_hash", "limit": 1000}, timeout=30))
+        return {row["module"]: row["content_hash"] for row in r.json()}
+
+    def upsert_modules(self, module: list[Modul]) -> None:
+        if not module:
+            return
+        self._check(self.s.post(
+            f"{self.url}/rest/v1/modules", params={"on_conflict": "user_id,module"},
+            json=[m.als_zeile(self.user_id) for m in module],
+            headers={"Prefer": "resolution=merge-duplicates"}, timeout=60))
+
     def upload(self, pfad: str, datei: Path) -> None:
         self._check(self.s.post(
             f"{self.url}/storage/v1/object/{BUCKET}/{self.user_id}/{pfad}",
@@ -186,17 +251,25 @@ def main() -> int:
     cfg = yaml.safe_load((PROJECT_DIR / "config.yaml").read_text(encoding="utf-8"))
     vault = Path(cfg["vault"]).expanduser()
     pfade = find_notes(vault, args.modul, args.notiz)
-    if not pfade:
-        print("Keine passenden Wochennotizen gefunden.")
+    # Mit --notiz geht es um einzelne Wochen, die Übersichten bleiben dann außen vor
+    uebersichten = [] if args.notiz else find_overviews(vault, args.modul)
+    if not pfade and not uebersichten:
+        print("Keine passenden Notizen gefunden.")
         return 1
 
     notizen = [n for n in (parse_note(p, vault) for p in pfade) if n]
-    bilder = {b.pfad: b for n in notizen for b in n.bilder}
+    module = [m for m in (parse_overview(p, vault) for p in uebersichten) if m]
+    bilder = {b.pfad: b for x in [*notizen, *module] for b in x.bilder}
+    for m in module:
+        hinweis = f", {len(m.fehlend)} Bilder fehlen: {', '.join(m.fehlend)}" if m.fehlend else ""
+        abschnitte = ", ".join(line[3:] for line in m.text.splitlines() if line.startswith("## "))
+        print(f"Übersicht {m.modul} ({m.name}): {len(m.text) // 1000} Tsd. Zeichen, Abschnitte: {abschnitte}{hinweis}")
     for n in notizen:
         hinweis = f", {len(n.fehlend)} Bilder fehlen: {', '.join(n.fehlend)}" if n.fehlend else ""
         print(f"{n.modul} W{n.woche:02d} {n.titel}: {len(n.text) // 1000} Tsd. Zeichen, {len(n.bilder)} Bilder{hinweis}")
     groesse = sum(b.quelle.stat().st_size for b in bilder.values())
-    print(f"\nGesamt: {len(notizen)} Notizen, {len(bilder)} Bilder (Originale {groesse / 1e6:.1f} MB, werden verkleinert)")
+    print(f"\nGesamt: {len(module)} Übersichten, {len(notizen)} Notizen, {len(bilder)} Bilder "
+          f"(Originale {groesse / 1e6:.1f} MB, werden verkleinert)")
 
     if not args.schreiben:
         print("\nTrockenlauf, nichts geschrieben. Zum Hochladen mit --schreiben aufrufen.")
@@ -219,8 +292,12 @@ def main() -> int:
     vorhanden = db.existing_notes()
     geaendert = [n for n in notizen if vorhanden.get(n.notiz) != n.hash]
     db.upsert_notes(geaendert)
+    vorhandene_module = db.existing_modules() if module else {}
+    module_geaendert = [m for m in module if vorhandene_module.get(m.modul) != m.hash]
+    db.upsert_modules(module_geaendert)
     print(f"Bilder hochgeladen: {hochgeladen}, unverändert: {len(bilder) - hochgeladen}")
     print(f"Notizen geschrieben: {len(geaendert)}, unverändert: {len(notizen) - len(geaendert)}")
+    print(f"Übersichten geschrieben: {len(module_geaendert)}, unverändert: {len(module) - len(module_geaendert)}")
     return 0
 
 

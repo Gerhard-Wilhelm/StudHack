@@ -1,11 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Store } from './store'
-import type { CardStateFields, Item, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
+import type { CardStateFields, Item, ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 const PENDING_KEY = 'studhack.pending'
 const CACHE_KEY = 'studhack.cards'
 const PAGE = 1000
 const NOTES_CACHE_KEY = 'studhack.notes'
+const MODULES_CACHE_KEY = 'studhack.modules'
 const SIGNED_URL_SECONDS = 3600
 
 const STATE_COLUMNS =
@@ -93,6 +94,19 @@ export class SupabaseStore implements Store {
       .single()
     if (error) throw error
     return data as Note
+  }
+
+  async loadModules(): Promise<ModuleInfo[]> {
+    try {
+      const { data, error } = await this.sb.from('modules').select('module,name,body').order('module')
+      if (error) throw error
+      writeJson(MODULES_CACHE_KEY, data)
+      return data as ModuleInfo[]
+    } catch (e) {
+      const cached = readJson<ModuleInfo[] | null>(MODULES_CACHE_KEY, null)
+      if (cached) return cached
+      throw e
+    }
   }
 
   async resolveImages(paths: string[]): Promise<Record<string, string>> {

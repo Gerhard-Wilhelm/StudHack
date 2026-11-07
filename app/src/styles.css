@@ -339,8 +339,6 @@ code { font-size: 0.9em; }
 
 /* Wochenliste ------------------------------------------------------------ */
 
-.module-view .title { margin-bottom: 20px; }
-
 .weeks { list-style: none; margin: 0 0 12px; padding: 0; }
 .weeks li + li { margin-top: -1px; }
 
@@ -466,3 +464,37 @@ code { font-size: 0.9em; }
 @media (prefers-reduced-motion: reduce) {
   .callout > summary::before { transition: none; }
 }
+
+/* Modulinfo -------------------------------------------------------------- */
+
+.module-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.module-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.module-view .title { margin-bottom: 4px; }
+.module-fullname { font-family: var(--serif); font-size: 1.2rem; color: var(--muted); margin: 0 0 16px; }
+
+.info-row {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  margin: 0 0 20px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--ink) 7%, var(--card));
+  border: 1.5px solid color-mix(in srgb, var(--ink) 35%, transparent);
+  border-radius: 14px;
+  text-align: left;
+  color: var(--ink);
+  font-weight: 600;
+}
+.info-hint { font-size: 0.85rem; font-weight: 400; color: var(--muted); }
+.md.note a { color: var(--ink); text-underline-offset: 2px; }

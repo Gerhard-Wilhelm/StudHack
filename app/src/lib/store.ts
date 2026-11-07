@@ -1,4 +1,4 @@
-import type { Note, NoteSummary, ReviewRecord, StudyCard } from './types'
+import type { ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 /** Datenquelle der App: Supabase oder Demo. */
 export interface Store {
@@ -13,6 +13,8 @@ export interface Store {
   loadNotes(): Promise<NoteSummary[]>
   /** Eine Wochennotiz mit Text. */
   loadNote(id: number): Promise<Note>
+  /** Modulübersichten mit vollem Namen. */
+  loadModules(): Promise<ModuleInfo[]>
   /** Adressen für Folienbilder, Schlüssel wie in der Notiz (<Kürzel>/<Bild>.jpg). */
   resolveImages(paths: string[]): Promise<Record<string, string>>
 }

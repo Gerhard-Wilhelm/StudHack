@@ -29,6 +29,13 @@ const md = new Marked({
     html({ text }) {
       return escapeHtml(text)
     },
+    // Links öffnen außerhalb der App, sonst verlässt man die installierte PWA ohne Zurück-Knopf
+    link({ href, title, tokens }) {
+      const text = this.parser.parseInline(tokens)
+      if (!/^(https?:|mailto:)/i.test(href)) return text
+      const t = title ? ` title="${escapeHtml(title)}"` : ''
+      return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"${t}>${text}</a>`
+    },
     image({ href, text }) {
       const alt = escapeHtml(text)
       if (href.startsWith(FOLIEN_PREFIX)) {

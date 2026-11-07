@@ -1,4 +1,4 @@
-import type { Note } from './types'
+import type { ModuleInfo, Note } from './types'
 
 // Selbst geschriebene Demo-Notizen. Keine Folieninhalte.
 
@@ -62,6 +62,42 @@ flowchart TD
 
 > [!question]- Lösung
 > Schulnoten sind ordinal. Die Abstände zwischen den Noten sind nicht sicher gleich groß, deshalb ist der Median das passendere Maß.
+`,
+  },
+]
+
+export const DEMO_MODULES: ModuleInfo[] = [
+  {
+    module: 'Finanzen', name: 'Finanzen für Einsteiger',
+    body: `## Eckdaten
+
+- **Kürzel:** Finanzen
+- **Prüfung:** Klausur, 60 Minuten, Taschenrechner erlaubt
+- **Material:** Demo-Folien, ein Übungsblatt pro Woche
+
+## Lernmethoden
+
+- Formeln wie $K_n = K_0 \\cdot (1+i)^n$ selbst herleiten statt auswendig lernen
+- Jede Woche zwei Rechenaufgaben ohne Lösung versuchen
+`,
+  },
+  {
+    module: 'Statistik', name: 'Beschreibende Statistik',
+    body: `## Eckdaten
+
+- **Kürzel:** Statistik
+- **Prüfung:** E-Klausur mit Antwort-Wahl und Rechenfeldern
+- **Hilfsmittel:** Formelsammlung
+
+## Ablaufplan
+
+1. Lagemaße
+2. Streuungsmaße
+3. Zusammenhangsmaße
+
+## Lernmethoden
+
+- Zu jedem Maß ein Beispiel mit fünf Zahlen von Hand rechnen
 `,
   },
 ]

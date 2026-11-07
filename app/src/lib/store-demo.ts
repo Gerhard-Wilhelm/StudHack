@@ -1,8 +1,8 @@
 import { DEMO_ITEMS } from './demo-cards'
-import { DEMO_NOTES } from './demo-notes'
+import { DEMO_MODULES, DEMO_NOTES } from './demo-notes'
 import { resetIntroduced } from './settings'
 import type { Store } from './store'
-import type { CardStateFields, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
+import type { CardStateFields, ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 const KEY = 'studhack.demo'
 
@@ -51,6 +51,10 @@ export class DemoStore implements Store {
     const note = DEMO_NOTES.find((n) => n.id === id)
     if (!note) throw new Error(`Demo-Notiz ${id} gibt es nicht.`)
     return note
+  }
+
+  async loadModules(): Promise<ModuleInfo[]> {
+    return DEMO_MODULES
   }
 
   async resolveImages(paths: string[]): Promise<Record<string, string>> {
