@@ -150,6 +150,7 @@ class Supabase:
         if r.status_code != 200:
             sys.exit(f"Anmeldung bei Supabase fehlgeschlagen ({r.status_code}).")
         self.s.headers["Authorization"] = f"Bearer {r.json()['access_token']}"
+        self.user_id = r.json()["user"]["id"]
 
     def _check(self, r):
         if r.status_code >= 300:

@@ -43,3 +43,16 @@ export interface ReviewRecord {
   durationMs: number
   reviewedAt: string
 }
+
+/** Wochennotiz für den Lesemodus, ohne Text. */
+export interface NoteSummary {
+  id: number
+  module: string
+  week: number | null
+  title: string
+}
+
+export interface Note extends NoteSummary {
+  body: string
+  source_file: string | null
+}

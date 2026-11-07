@@ -7,7 +7,8 @@ function plural(n: number, one: string, many: string) {
 export function Home(props: {
   overview: Overview
   pending: number
-  onStudy: (module?: string) => void
+  onStudy: () => void
+  onOpenModule: (module: string) => void
   onSettings: () => void
 }) {
   const { total, modules } = props.overview
@@ -34,14 +35,14 @@ export function Home(props: {
       )}
 
       {modules.length === 0 ? (
-        <p className="note">Noch keine freigegebenen Karten. Gib im Importer Karten frei, dann tauchen sie hier auf.</p>
+        <p className="note">Noch keine Karten und Notizen. Lade sie mit dem Importer hoch, dann tauchen sie hier auf.</p>
       ) : (
         <ul className="modules">
           {modules.map((m) => {
             const empty = m.due + m.fresh === 0
             return (
               <li key={m.module}>
-                <button className="module" disabled={empty} onClick={() => props.onStudy(m.module)}>
+                <button className={`module ${empty ? 'is-empty' : ''}`} onClick={() => props.onOpenModule(m.module)}>
                   <span className="module-name">{m.module}</span>
                   <span className="module-counts">
                     <span className="count due" aria-label={`${m.due} fällig`}>{m.due}</span>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatInterval, fromCard, rate, toCard } from './fsrs'
-import { advance, buildQueue, overview } from './queue'
+import { advance, buildQueue, overview, weekCounts } from './queue'
 import { renderMarkdown, replaceObsidianLinks } from './render'
 import type { CardStateFields, Item, StudyCard } from './types'
 
@@ -44,6 +44,14 @@ describe('Warteschlange', () => {
     const q = buildQueue(cards, { now, newLimit: 10 })
     expect(advance(q, q[0], true).map((c) => c.item.id)).toEqual([3, 2, 1, 6, 4])
     expect(advance(q, q[0], false).map((c) => c.item.id)).toEqual([3, 2, 1, 6])
+  })
+
+  it('filtert nach Woche und zählt je Woche', () => {
+    expect(buildQueue(cards, { now, newLimit: 10, module: 'A', week: 3 }).map((c) => c.item.id)).toEqual([1])
+    expect(buildQueue(cards, { now, newLimit: 10, module: 'A', week: null }).map((c) => c.item.id)).toEqual([6])
+    const wc = weekCounts(cards, 'B', now, 10)
+    expect(wc.get(1)).toEqual({ due: 1, fresh: 0 })
+    expect(wc.get(2)).toEqual({ due: 1, fresh: 0 })
   })
 
   it('zählt gesamt und pro Modul', () => {
@@ -98,5 +106,33 @@ describe('Darstellung', () => {
 
   it('zeigt rohes HTML als Text', () => {
     expect(renderMarkdown('<script>alert(1)</script>')).not.toContain('<script>')
+  })
+})
+
+describe('Lesemodus', () => {
+  it('klappt Lösungs-Callouts ein und rendert Formeln darin', () => {
+    const html = renderMarkdown('**1. Frage?**\n\n> [!question]- Lösung\n> Weil $x_1$ wächst.\n> Zweite Zeile.\n\nDanach.')
+    expect(html).toMatch(/<details class="callout callout-question"><summary>Lösung<\/summary>/)
+    expect(html).toContain('class="katex"')
+    expect(html).toContain('Zweite Zeile')
+    expect(html).toMatch(/<\/details>[\s\S]*Danach/)
+    expect(html).not.toContain('BLOCKPLACEHOLDER')
+  })
+
+  it('macht aus Mermaid einen Platzhalter und aus anderem Code einen Codeblock', () => {
+    const html = renderMarkdown('```mermaid\ngraph TD\n  A-->B\n```\n\n```\nKosten $5\n```')
+    expect(html).toContain('<div class="mermaid" data-src="graph TD\n  A--&#62;B\n"></div>')
+    expect(html).toContain('<pre><code>Kosten $5</code></pre>')
+  })
+
+  it('verweist Folienbilder auf den Speicher statt auf eine Adresse', () => {
+    const html = renderMarkdown('![IuF S04](folien/IuF/BA02-S04.jpg)')
+    expect(html).toContain('<img data-folie="IuF/BA02-S04.jpg" alt="IuF S04" loading="lazy">')
+    expect(html).not.toContain('src=')
+  })
+
+  it('versteht Obsidian-Links mit escaptem Strich in Tabellen', () => {
+    const html = renderMarkdown('| A | B |\n|---|---|\n| x | [[BA02.pdf#page=3\\|IuF S. 3]] |')
+    expect(html).toContain('<td>IuF S. 3</td>')
   })
 })

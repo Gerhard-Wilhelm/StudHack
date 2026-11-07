@@ -1,10 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Store } from './store'
-import type { CardStateFields, Item, ReviewRecord, StudyCard } from './types'
+import type { CardStateFields, Item, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 const PENDING_KEY = 'studhack.pending'
 const CACHE_KEY = 'studhack.cards'
 const PAGE = 1000
+const NOTES_CACHE_KEY = 'studhack.notes'
+const SIGNED_URL_SECONDS = 3600
 
 const STATE_COLUMNS =
   'item_id,due,stability,difficulty,elapsed_days,scheduled_days,learning_steps,reps,lapses,state,last_review'
@@ -64,6 +66,48 @@ export class SupabaseStore implements Store {
       const latest = new Map(pending.map((p) => [p.itemId, p.state]))
       return cached.map((c) => ({ ...c, state: latest.get(c.item.id) ?? c.state }))
     }
+  }
+
+  async loadNotes(): Promise<NoteSummary[]> {
+    try {
+      const { data, error } = await this.sb
+        .from('notes')
+        .select('id,module,week,title')
+        .order('module')
+        .order('week')
+      if (error) throw error
+      writeJson(NOTES_CACHE_KEY, data)
+      return data as NoteSummary[]
+    } catch (e) {
+      const cached = readJson<NoteSummary[] | null>(NOTES_CACHE_KEY, null)
+      if (cached) return cached
+      throw e
+    }
+  }
+
+  async loadNote(id: number): Promise<Note> {
+    const { data, error } = await this.sb
+      .from('notes')
+      .select('id,module,week,title,body,source_file')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data as Note
+  }
+
+  async resolveImages(paths: string[]): Promise<Record<string, string>> {
+    const { data: auth } = await this.sb.auth.getSession()
+    const uid = auth.session?.user.id
+    if (!uid || paths.length === 0) return {}
+    const { data, error } = await this.sb.storage
+      .from('folien')
+      .createSignedUrls(paths.map((p) => `${uid}/${p}`), SIGNED_URL_SECONDS)
+    if (error) throw error
+    const urls: Record<string, string> = {}
+    for (const row of data) {
+      if (row.signedUrl && row.path) urls[row.path.slice(uid.length + 1)] = row.signedUrl
+    }
+    return urls
   }
 
   async saveReview(r: ReviewRecord): Promise<void> {

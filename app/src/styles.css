@@ -186,14 +186,14 @@ code { font-size: 0.9em; }
 }
 .modules li:first-child .module { border-top-right-radius: 14px; }
 .modules li:last-child .module { border-bottom-right-radius: 14px; }
-.module:disabled { border-left-color: var(--edge); color: var(--muted); }
+.module.is-empty { border-left-color: var(--edge); }
 .module-name { font-family: var(--serif); font-size: 1.15rem; font-weight: 600; }
 .module-counts { display: flex; gap: 14px; }
 
 .count { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 2ch; text-align: right; }
 .count.due { color: var(--ink); }
 .count.fresh { color: var(--easy); }
-.module:disabled .count { color: var(--muted); }
+.module.is-empty .count { color: var(--muted); }
 .legend .count { font-weight: 500; margin-right: 10px; }
 
 /* Lernkarte ------------------------------------------------------------- */
@@ -335,4 +335,134 @@ code { font-size: 0.9em; }
   font-size: 0.75rem;
   font-weight: 650;
   border-radius: 0 0 10px 10px;
+}
+
+/* Wochenliste ------------------------------------------------------------ */
+
+.module-view .title { margin-bottom: 20px; }
+
+.weeks { list-style: none; margin: 0 0 12px; padding: 0; }
+.weeks li + li { margin-top: -1px; }
+
+.week {
+  width: 100%;
+  min-height: 60px;
+  display: grid;
+  grid-template-columns: 3rem 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  border-left: 4px solid var(--ink);
+  text-align: left;
+}
+.weeks li:first-child .week { border-top-right-radius: 14px; }
+.weeks li:last-child .week { border-bottom-right-radius: 14px; }
+.week-no { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.week-title { font-family: var(--serif); font-size: 1.05rem; line-height: 1.3; }
+
+/* Lesemodus -------------------------------------------------------------- */
+
+.note-title { font-size: 1.85rem; margin: 4px 0 20px; }
+.note-week {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.md.note { font-size: 1.08rem; line-height: 1.6; }
+.md.note p, .md.note ul, .md.note ol, .md.note table, .md.note pre { margin: 0 0 1em; }
+.md.note .katex-display { margin: 0 0 1em; }
+.md.note h2 {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  line-height: 1.25;
+  margin: 1.8em 0 0.6em;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--rule);
+}
+.md.note > h2:first-child { margin-top: 0.4em; }
+.md.note h3 { font-family: var(--serif); font-size: 1.12rem; margin: 1.4em 0 0.4em; }
+.md.note li + li { margin-top: 0.25em; }
+.md.note table { display: block; overflow-x: auto; max-width: 100%; }
+.md.note th, .md.note td { padding: 6px 10px; vertical-align: top; }
+.md.note th { font-family: var(--sans); font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+.md.note pre {
+  overflow-x: auto;
+  padding: 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--edge) 35%, var(--card));
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.md.note input[type='checkbox'] { margin-right: 6px; }
+
+.md.note img {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 120px;
+  margin: 0 0 1em;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--card);
+  cursor: zoom-in;
+}
+.md.note img[src] { min-height: 0; }
+.missing { color: var(--muted); font-size: 0.9rem; font-style: italic; }
+
+.md.note .mermaid {
+  margin: 0 0 1em;
+  padding: 12px;
+  overflow-x: auto;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--card);
+  min-height: 60px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.md.note .mermaid svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+
+/* Eingeklappte Lösungen wie ein umgeknicktes Kärtchen */
+.callout {
+  margin: -0.4em 0 1.2em;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 35%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ink) 6%, var(--card));
+}
+.callout > summary, .callout-title {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+.callout > summary::-webkit-details-marker { display: none; }
+.callout > summary::before {
+  content: '';
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 120ms ease-out;
+}
+.callout[open] > summary::before { transform: rotate(45deg); }
+.callout-body { padding: 0 14px 12px; }
+.callout-body > :last-child { margin-bottom: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .callout > summary::before { transition: none; }
 }

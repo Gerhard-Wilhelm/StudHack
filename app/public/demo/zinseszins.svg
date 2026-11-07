@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" font-family="-apple-system, Helvetica, sans-serif">
+  <rect width="640" height="360" fill="#ffffff"/>
+  <text x="32" y="40" font-size="20" font-weight="600" fill="#1b1f27">Kapital bei 5 % Zins (Start 1000 €)</text>
+  <line x1="64" y1="300" x2="608" y2="300" stroke="#9aa3b2"/>
+  <g fill="#1d3c8f">
+    <rect x="84"  y="200" width="56" height="100"/>
+    <rect x="164" y="195" width="56" height="105"/>
+    <rect x="244" y="190" width="56" height="110"/>
+    <rect x="324" y="184" width="56" height="116"/>
+    <rect x="404" y="178" width="56" height="122"/>
+    <rect x="484" y="172" width="56" height="128"/>
+  </g>
+  <g font-size="14" fill="#5b6372" text-anchor="middle">
+    <text x="112" y="322">0</text><text x="192" y="322">1</text><text x="272" y="322">2</text>
+    <text x="352" y="322">3</text><text x="432" y="322">4</text><text x="512" y="322">5</text>
+    <text x="336" y="348">Jahre</text>
+  </g>
+  <g font-size="13" fill="#1b1f27" text-anchor="middle">
+    <text x="112" y="192">1000</text><text x="192" y="187">1050</text><text x="272" y="182">1103</text>
+    <text x="352" y="176">1158</text><text x="432" y="170">1216</text><text x="512" y="164">1276</text>
+  </g>
+</svg>

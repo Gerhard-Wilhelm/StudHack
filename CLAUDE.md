@@ -46,8 +46,10 @@ Bestehend:
 - `state/state.json`: bereits geladene Dateien (lokal, nicht im Repository)
 - `reports/`: Berichte über neue Materialien (lokal, nicht im Repository)
 - `importer/import_notes.py`: Karteikarten und Verständnisfragen aus den Wochennotizen nach Supabase (Standard Trockenlauf, `--schreiben` lädt hoch)
-- `supabase/migrations/`: Datenmodell (Tabellen items, card_states, reviews)
-- `app/`: PWA (Vite, React, TypeScript). Login, Startseite, Lernen mit FSRS,
+- `importer/import_lesemodus.py`: Wochennotizen (ohne Karteikarten-Abschnitt) nach Tabelle notes, eingebettete Folienbilder verkleinert in den privaten Bucket folien (Standard Trockenlauf, `--schreiben` lädt hoch, Bildcache in `cache/folien/`)
+- `supabase/migrations/`: Datenmodell (Tabellen items, card_states, reviews, notes, Bucket folien)
+- `app/`: PWA (Vite, React, TypeScript). Login, Startseite, Wochenliste je Modul,
+  Wochenansicht mit Notiz, Folienbildern und Mermaid, Lernen mit FSRS,
   Demo-Modus. Schlüssel in `app/.env.local`, Details in `app/README.md`
 
 Geplant:

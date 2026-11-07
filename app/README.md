@@ -32,6 +32,27 @@ Ohne `.env.local` läuft nur der Demo-Modus.
   Ein Lernobjekt ohne Zeile in `card_states` erscheint nicht. Der Importer legt
   diese Zeile beim Hochladen an.
 
+## Lesemodus (Zusammenfassungen und Folienbilder)
+
+Einmalig die Migration `supabase/migrations/20261107120000_notizen.sql` im
+Supabase SQL Editor ausführen. Sie legt die Tabelle `notes` und den privaten
+Bucket `folien` an.
+
+Danach im Ordner `Lernassistent`:
+
+```bash
+.venv/bin/python -m importer.import_lesemodus
+.venv/bin/python -m importer.import_lesemodus --schreiben
+```
+
+Der erste Aufruf ist ein Trockenlauf. Der zweite lädt die Notizen und die
+verkleinerten Bilder hoch. Danach nur noch nach Änderungen im Vault erneut
+aufrufen, Unverändertes wird übersprungen.
+
+In der App öffnet ein Tipp auf ein Modul die Wochenliste, ein Tipp auf eine
+Woche die Notiz mit Bildern, Diagrammen und eingeklappten Lösungen. Unten gibt
+es "Karten dieser Woche lernen".
+
 ## Cloudflare Pages
 
 - Root directory: `app`

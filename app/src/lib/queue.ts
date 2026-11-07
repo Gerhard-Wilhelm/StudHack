@@ -17,9 +17,13 @@ function byWeekThenId(a: StudyCard, b: StudyCard): number {
 /** Erst fällige Wiederholungen nach Fälligkeit, dann neue Karten nach Woche. */
 export function buildQueue(
   cards: StudyCard[],
-  opts: { now: Date; newLimit: number; module?: string },
+  opts: { now: Date; newLimit: number; module?: string; week?: number | null },
 ): StudyCard[] {
-  const pool = opts.module ? cards.filter((c) => c.item.module === opts.module) : cards
+  const pool = cards.filter(
+    (c) =>
+      (opts.module === undefined || c.item.module === opts.module) &&
+      (opts.week === undefined || c.item.week === opts.week),
+  )
   const due = pool
     .filter((c) => isDue(c, opts.now))
     .sort((a, b) => new Date(a.state.due).getTime() - new Date(b.state.due).getTime())
@@ -52,6 +56,25 @@ export function overview(cards: StudyCard[], now: Date, newLimit: number): Overv
   const due = modules.reduce((s, m) => s + m.due, 0)
   const allNew = [...map.values()].reduce((s, m) => s + m.fresh, 0)
   return { total: { due, fresh: Math.min(allNew, newLimit) }, modules }
+}
+
+/** Fällige und neue Karten je Woche eines Moduls. Neue sind auf das Restkontingent gedeckelt. */
+export function weekCounts(
+  cards: StudyCard[],
+  module: string,
+  now: Date,
+  newLimit: number,
+): Map<number | null, Counts> {
+  const map = new Map<number | null, Counts>()
+  for (const c of cards) {
+    if (c.item.module !== module) continue
+    const w = map.get(c.item.week) ?? { due: 0, fresh: 0 }
+    if (isDue(c, now)) w.due++
+    else if (isNew(c)) w.fresh++
+    map.set(c.item.week, w)
+  }
+  for (const w of map.values()) w.fresh = Math.min(w.fresh, newLimit)
+  return map
 }
 
 /**

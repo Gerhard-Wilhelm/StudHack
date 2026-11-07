@@ -1,7 +1,8 @@
 import { DEMO_ITEMS } from './demo-cards'
+import { DEMO_NOTES } from './demo-notes'
 import { resetIntroduced } from './settings'
 import type { Store } from './store'
-import type { CardStateFields, ReviewRecord, StudyCard } from './types'
+import type { CardStateFields, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 const KEY = 'studhack.demo'
 
@@ -40,6 +41,21 @@ export class DemoStore implements Store {
 
   pendingCount(): number {
     return 0
+  }
+
+  async loadNotes(): Promise<NoteSummary[]> {
+    return DEMO_NOTES.map(({ id, module, week, title }) => ({ id, module, week, title }))
+  }
+
+  async loadNote(id: number): Promise<Note> {
+    const note = DEMO_NOTES.find((n) => n.id === id)
+    if (!note) throw new Error(`Demo-Notiz ${id} gibt es nicht.`)
+    return note
+  }
+
+  async resolveImages(paths: string[]): Promise<Record<string, string>> {
+    // Demo-Bilder liegen in public/demo/
+    return Object.fromEntries(paths.map((p) => [p, `demo/${p.split('/').pop()}`]))
   }
 
   static reset() {

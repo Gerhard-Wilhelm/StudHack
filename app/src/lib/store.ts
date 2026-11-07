@@ -1,4 +1,4 @@
-import type { ReviewRecord, StudyCard } from './types'
+import type { Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 /** Datenquelle der App: Supabase oder Demo. */
 export interface Store {
@@ -9,4 +9,10 @@ export interface Store {
   saveReview(r: ReviewRecord): Promise<void>
   /** Anzahl Bewertungen, die noch nicht gespeichert sind. */
   pendingCount(): number
+  /** Alle Wochennotizen ohne Text, für Modul- und Wochenlisten. */
+  loadNotes(): Promise<NoteSummary[]>
+  /** Eine Wochennotiz mit Text. */
+  loadNote(id: number): Promise<Note>
+  /** Adressen für Folienbilder, Schlüssel wie in der Notiz (<Kürzel>/<Bild>.jpg). */
+  resolveImages(paths: string[]): Promise<Record<string, string>>
 }
