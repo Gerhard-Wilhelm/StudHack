@@ -55,6 +55,23 @@ In der App öffnet ein Tipp auf ein Modul die Wochenliste mit "Infos zum Modul"
 Woche die Notiz mit Bildern, Diagrammen und eingeklappten Lösungen. Unten gibt
 es "Karten dieser Woche lernen".
 
+## Auswahlfragen und Freigabe
+
+Einmalig die Migration `supabase/migrations/20261109120000_auswahlfragen.sql`
+ausführen (neuer Typ Mehrfachauswahl). Den API-Schlüssel trägst du selbst als
+`ANTHROPIC_API_KEY=` in die `.env` ein. Dann im Ordner `Lernassistent`:
+
+```bash
+.venv/bin/python -m generator.generate_mc --notiz "MAK W03"
+.venv/bin/python -m generator.generate_mc --schreiben
+```
+
+Der erste Aufruf ist ein Probelauf für eine Notiz: Er ruft die API auf und
+zeigt Fragen, verworfene Fragen und Kosten, schreibt aber nichts. Der zweite
+legt für alle Notizen ohne Fragen Entwürfe an. In der App steht dann auf der
+Startseite "Entwürfe prüfen". Freigegebene Fragen kommen sofort in den
+Lernstapel, die Antworten werden bei jeder Abfrage neu gemischt.
+
 ## Cloudflare Pages
 
 - Root directory: `app`

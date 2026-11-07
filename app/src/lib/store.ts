@@ -1,4 +1,4 @@
-import type { ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
+import type { Item, ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 /** Datenquelle der App: Supabase oder Demo. */
 export interface Store {
@@ -13,6 +13,10 @@ export interface Store {
   loadNotes(): Promise<NoteSummary[]>
   /** Eine Wochennotiz mit Text. */
   loadNote(id: number): Promise<Note>
+  /** Entwürfe vom Generator, die noch freigegeben oder verworfen werden müssen. */
+  loadDrafts(): Promise<Item[]>
+  /** Entwürfe freigeben (kommen in den Lernstapel) oder verwerfen. */
+  decideDrafts(ids: number[], status: 'freigegeben' | 'verworfen'): Promise<void>
   /** Modulübersichten mit vollem Namen. */
   loadModules(): Promise<ModuleInfo[]>
   /** Adressen für Folienbilder, Schlüssel wie in der Notiz (<Kürzel>/<Bild>.jpg). */

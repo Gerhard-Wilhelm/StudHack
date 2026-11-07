@@ -8,6 +8,8 @@ export function Home(props: {
   overview: Overview
   names: Record<string, string>
   pending: number
+  drafts: number
+  onOpenDrafts: () => void
   onStudy: () => void
   onOpenModule: (module: string) => void
   onSettings: () => void
@@ -27,6 +29,13 @@ export function Home(props: {
           ? 'Für heute ist alles erledigt.'
           : `${plural(total.due, 'Wiederholung', 'Wiederholungen')} und ${plural(total.fresh, 'neue Karte', 'neue Karten')}.`}
       </p>
+
+      {props.drafts > 0 && (
+        <button className="info-row drafts-row" onClick={props.onOpenDrafts}>
+          <span>{plural(props.drafts, 'Entwurf', 'Entwürfe')} prüfen</span>
+          <span className="info-hint">Neue Fragen vom Generator freigeben oder verwerfen</span>
+        </button>
+      )}
 
       {props.pending > 0 && (
         <p className="note">

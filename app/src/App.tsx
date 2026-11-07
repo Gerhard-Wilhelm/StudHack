@@ -5,7 +5,8 @@ import { SupabaseStore } from './lib/store-supabase'
 import { supabase } from './lib/supabase'
 import { buildQueue, overview, weekCounts } from './lib/queue'
 import { countIntroduced, remainingNew } from './lib/settings'
-import type { ModuleInfo, NoteSummary, ReviewRecord, StudyCard } from './lib/types'
+import type { Item, ModuleInfo, NoteSummary, ReviewRecord, StudyCard } from './lib/types'
+import { Drafts } from './views/Drafts'
 import { Home } from './views/Home'
 import { Login } from './views/Login'
 import { ModuleInfoView } from './views/ModuleInfo'
@@ -17,6 +18,7 @@ import { WeekView } from './views/WeekView'
 type View =
   | { name: 'home' }
   | { name: 'settings' }
+  | { name: 'drafts' }
   | { name: 'module'; module: string }
   | { name: 'info'; module: string }
   | { name: 'week'; module: string; week: number | null }
@@ -48,6 +50,7 @@ export function App() {
   const [notes, setNotes] = useState<NoteSummary[]>([])
   const [notesError, setNotesError] = useState<string | null>(null)
   const [modules, setModules] = useState<ModuleInfo[]>([])
+  const [drafts, setDrafts] = useState<Item[]>([])
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<View>({ name: 'home' })
   const [pending, setPending] = useState(0)
@@ -78,6 +81,11 @@ export function App() {
       setNotesError(null)
     } catch (e) {
       setNotesError(e instanceof Error ? e.message : String(e))
+    }
+    try {
+      setDrafts(await store.loadDrafts())
+    } catch {
+      setDrafts([])
     }
     try {
       setModules(await store.loadModules())
@@ -225,6 +233,20 @@ export function App() {
         onBack={() => setView({ name: 'home' })}
       />
     )
+  } else if (view.name === 'drafts') {
+    body = (
+      <Drafts
+        drafts={drafts}
+        names={moduleNames}
+        onDecide={async (ids, status) => {
+          await store.decideDrafts(ids, status)
+          setDrafts((ds) => ds.filter((d) => !ids.includes(d.id)))
+          // Freigegebene erscheinen erst nach dem Neuladen im Lernstapel
+          if (status === 'freigegeben') void load()
+        }}
+        onBack={() => setView({ name: 'home' })}
+      />
+    )
   } else if (view.name === 'info') {
     const info = modules.find((m) => m.module === view.module)
     const back = { name: 'module', module: view.module } as const
@@ -255,6 +277,8 @@ export function App() {
         overview={ov}
         names={moduleNames}
         pending={pending}
+        drafts={drafts.length}
+        onOpenDrafts={() => setView({ name: 'drafts' })}
         onStudy={() => startStudy({}, { name: 'home' })}
         onOpenModule={(module) => setView({ name: 'module', module })}
         onSettings={() => setView({ name: 'settings' })}

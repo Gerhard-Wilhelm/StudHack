@@ -1,10 +1,11 @@
-import { DEMO_ITEMS } from './demo-cards'
+import { DEMO_DRAFTS, DEMO_ITEMS } from './demo-cards'
 import { DEMO_MODULES, DEMO_NOTES } from './demo-notes'
 import { resetIntroduced } from './settings'
 import type { Store } from './store'
-import type { CardStateFields, ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
+import type { CardStateFields, Item, ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 const KEY = 'studhack.demo'
+const DRAFTS_KEY = 'studhack.demoDrafts'
 
 function emptyState(): CardStateFields {
   return {
@@ -21,13 +22,36 @@ function readStates(): Record<number, CardStateFields> {
   }
 }
 
+function readDecisions(): Record<number, 'freigegeben' | 'verworfen'> {
+  try {
+    return JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? '{}') as Record<number, 'freigegeben' | 'verworfen'>
+  } catch {
+    return {}
+  }
+}
+
 /** Demo ohne Supabase. Der Lernstand liegt nur in diesem Browser. */
 export class DemoStore implements Store {
   kind = 'demo' as const
   private states = readStates()
+  private decisions = readDecisions()
 
   async loadCards(): Promise<StudyCard[]> {
-    return DEMO_ITEMS.map((item) => ({ item, state: this.states[item.id] ?? emptyState() }))
+    const approved = DEMO_DRAFTS.filter((d) => this.decisions[d.id] === 'freigegeben')
+    return [...DEMO_ITEMS, ...approved].map((item) => ({ item, state: this.states[item.id] ?? emptyState() }))
+  }
+
+  async loadDrafts(): Promise<Item[]> {
+    return DEMO_DRAFTS.filter((d) => !this.decisions[d.id])
+  }
+
+  async decideDrafts(ids: number[], status: 'freigegeben' | 'verworfen'): Promise<void> {
+    for (const id of ids) this.decisions[id] = status
+    try {
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(this.decisions))
+    } catch {
+      // Demo läuft dann nur bis zum Neuladen
+    }
   }
 
   async saveReview(r: ReviewRecord): Promise<void> {
@@ -65,6 +89,7 @@ export class DemoStore implements Store {
   static reset() {
     resetIntroduced('demo')
     try {
+      localStorage.removeItem(DRAFTS_KEY)
       localStorage.removeItem(KEY)
     } catch {
       // nichts zu tun

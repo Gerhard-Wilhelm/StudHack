@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { correctSet, evaluate, isChoice, shuffledOrder } from './choice'
 import { formatInterval, fromCard, rate, toCard } from './fsrs'
 import { advance, buildQueue, overview, weekCounts } from './queue'
 import { renderMarkdown, replaceObsidianLinks } from './render'
@@ -141,5 +142,34 @@ describe('Lesemodus', () => {
   it('versteht Obsidian-Links mit escaptem Strich in Tabellen', () => {
     const html = renderMarkdown('| A | B |\n|---|---|\n| x | [[BA02.pdf#page=3\\|IuF S. 3]] |')
     expect(html).toContain('<td>IuF S. 3</td>')
+  })
+})
+
+describe('Auswahlfragen', () => {
+  const sc: Item = {
+    id: 1, module: 'A', week: 1, type: 'single_choice', question: 'F', answer: 'A',
+    options: { choices: ['a', 'b', 'c', 'd'], correct: 2 }, source_file: null, source_page: null,
+  }
+  const mc: Item = { ...sc, type: 'multiple_choice', options: { choices: ['a', 'b', 'c', 'd'], correct: [0, 3] } }
+
+  it('liest die richtigen Antworten für beide Typen', () => {
+    expect(correctSet(sc)).toEqual([2])
+    expect(correctSet(mc)).toEqual([0, 3])
+    expect(isChoice(sc) && isChoice(mc)).toBe(true)
+    expect(isChoice({ ...sc, type: 'karteikarte', options: null })).toBe(false)
+  })
+
+  it('wertet nur genau die richtige Auswahl als richtig', () => {
+    expect(evaluate([0, 3], [0, 3], 4)).toEqual({ ok: true, marks: ['correct', '', '', 'correct'] })
+    expect(evaluate([0], [0, 3], 4)).toEqual({ ok: false, marks: ['correct', '', '', 'missed'] })
+    expect(evaluate([0, 1, 3], [0, 3], 4)).toEqual({ ok: false, marks: ['correct', 'wrong', '', 'correct'] })
+    expect(evaluate([], [2], 4).ok).toBe(false)
+  })
+
+  it('mischt alle Positionen genau einmal', () => {
+    let seed = 0.7
+    const order = shuffledOrder(4, () => (seed = (seed * 9301 + 49297) % 233280 / 233280))
+    expect([...order].sort()).toEqual([0, 1, 2, 3])
+    expect(shuffledOrder(1)).toEqual([0])
   })
 })

@@ -96,6 +96,24 @@ export class SupabaseStore implements Store {
     return data as Note
   }
 
+  async loadDrafts(): Promise<Item[]> {
+    const { data, error } = await this.sb
+      .from('items')
+      .select(ITEM_COLUMNS)
+      .eq('status', 'entwurf')
+      .order('module')
+      .order('week')
+      .order('id')
+    if (error) throw error
+    return data as Item[]
+  }
+
+  async decideDrafts(ids: number[], status: 'freigegeben' | 'verworfen'): Promise<void> {
+    if (ids.length === 0) return
+    const { error } = await this.sb.from('items').update({ status }).in('id', ids).eq('status', 'entwurf')
+    if (error) throw error
+  }
+
   async loadModules(): Promise<ModuleInfo[]> {
     try {
       const { data, error } = await this.sb.from('modules').select('module,name,body').order('module')

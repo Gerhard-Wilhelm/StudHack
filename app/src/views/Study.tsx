@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Markdown } from '../components/Markdown'
 import { RatingBar } from '../components/RatingBar'
+import { correctSet, evaluate, isChoice, shuffledOrder } from '../lib/choice'
 import { preview, rate } from '../lib/fsrs'
 import { advance } from '../lib/queue'
 import type { Grade, ItemType, ReviewRecord, StudyCard } from '../lib/types'
 
-const TYPE_LABEL: Record<ItemType, string> = {
+export const TYPE_LABEL: Record<ItemType, string> = {
   karteikarte: 'Karteikarte',
   verstaendnisfrage: 'Verständnisfrage',
   single_choice: 'Single Choice',
+  multiple_choice: 'Mehrfachauswahl',
   rechenaufgabe: 'Rechenaufgabe',
 }
 
@@ -19,12 +21,20 @@ export function Study(props: {
 }) {
   const [queue, setQueue] = useState(props.initial)
   const [revealed, setRevealed] = useState(false)
-  const [picked, setPicked] = useState<number | null>(null)
+  const [selected, setSelected] = useState<number[]>([])
   const [done, setDone] = useState(0)
   const shownAt = useRef(Date.now())
   const card = queue[0]
   const now = useMemo(() => new Date(), [card, revealed])
   const intervals = useMemo(() => (card ? preview(card.state, now) : null), [card, now])
+
+  const choice = card ? isChoice(card.item) : false
+  const multi = card?.item.type === 'multiple_choice'
+  const choices = card?.item.options?.choices ?? []
+  // Neu gemischt bei jeder Vorlage, auch wenn eine Karte nach "Nochmal" wiederkommt
+  const order = useMemo(() => shuffledOrder(choices.length), [card])
+  const result = choice && revealed ? evaluate(selected, correctSet(card!.item), choices.length) : null
+  const suggested: Grade | undefined = result ? (result.ok ? 3 : 1) : undefined
 
   useEffect(() => {
     shownAt.current = Date.now()
@@ -47,19 +57,32 @@ export function Study(props: {
     )
     setDone((d) => d + 1)
     setRevealed(false)
-    setPicked(null)
+    setSelected([])
     setQueue((q) => advance(q, { item: card.item, state }, grade === 1))
   }
 
-  // Tastatur für den Test am Rechner: Leertaste deckt auf, 1 bis 4 bewerten.
+  function pick(i: number) {
+    if (revealed) return
+    if (multi) {
+      setSelected((s) => (s.includes(i) ? s.filter((x) => x !== i) : [...s, i]))
+    } else {
+      // Single Choice: ein Tipp wählt und prüft sofort
+      setSelected([i])
+      setRevealed(true)
+    }
+  }
+
+  // Tastatur für den Test am Rechner: Leertaste deckt auf oder prüft, 1 bis 4 wählen bzw. bewerten.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (!card) return
       if (!revealed && (e.key === ' ' || e.key === 'Enter')) {
         e.preventDefault()
         setRevealed(true)
-      } else if (revealed && ['1', '2', '3', '4'].includes(e.key)) {
-        onRate(Number(e.key) as Grade)
+      } else if (['1', '2', '3', '4'].includes(e.key)) {
+        const n = Number(e.key)
+        if (revealed) onRate(n as Grade)
+        else if (choice && n <= order.length) pick(order[n - 1])
       }
     }
     window.addEventListener('keydown', onKey)
@@ -82,7 +105,6 @@ export function Study(props: {
   }
 
   const { item } = card
-  const choices = item.type === 'single_choice' ? item.options?.choices : undefined
 
   return (
     <main className="page study">
@@ -93,7 +115,7 @@ export function Study(props: {
 
       <article
         className={`card ${revealed ? 'is-revealed' : ''}`}
-        onClick={() => !revealed && !choices && setRevealed(true)}
+        onClick={() => !revealed && !choice && setRevealed(true)}
       >
         <div className="card-head">
           <span>{item.module}{item.week ? `, Woche ${item.week}` : ''}</span>
@@ -102,27 +124,37 @@ export function Study(props: {
 
         <Markdown className="question" text={item.question} />
 
-        {choices && (
-          <ol className="choices">
-            {choices.map((c, i) => {
-              const correct = revealed && i === item.options?.correct
-              const wrong = revealed && picked === i && !correct
-              return (
-                <li key={i}>
-                  <button
-                    className={`choice ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}`}
-                    disabled={revealed}
-                    onClick={() => {
-                      setPicked(i)
-                      setRevealed(true)
-                    }}
-                  >
-                    <Markdown text={c} />
-                  </button>
-                </li>
-              )
-            })}
-          </ol>
+        {choice && (
+          <>
+            {multi && !revealed && <p className="choice-hint">Mehrere Antworten möglich</p>}
+            <ol className="choices">
+              {order.map((i) => {
+                const raw = result?.marks[i] ?? ''
+                // "übersehen" gibt es nur bei Mehrfachauswahl, bei Single Choice ist die Lösung einfach grün
+                const mark = !multi && raw === 'missed' ? 'correct' : raw
+                const isSel = selected.includes(i)
+                return (
+                  <li key={i}>
+                    <button
+                      className={`choice ${mark} ${isSel ? (revealed ? 'chosen' : 'selected') : ''}`}
+                      aria-pressed={multi ? isSel : undefined}
+                      disabled={revealed}
+                      onClick={() => pick(i)}
+                    >
+                      {multi && <span className="checkbox" aria-hidden="true" />}
+                      <Markdown text={choices[i]} />
+                      {mark === 'missed' && <span className="choice-note">übersehen</span>}
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+            {result && (
+              <p className={`verdict ${result.ok ? 'ok' : 'bad'}`} role="status">
+                {result.ok ? 'Richtig.' : selected.length ? 'Nicht ganz.' : 'Ohne Antwort aufgedeckt.'}
+              </p>
+            )}
+          </>
         )}
 
         {revealed && (
@@ -140,10 +172,12 @@ export function Study(props: {
 
       <footer className="dock">
         {revealed && intervals ? (
-          <RatingBar now={now} preview={intervals} onRate={onRate} />
+          <RatingBar now={now} preview={intervals} onRate={onRate} suggested={suggested} />
+        ) : multi && selected.length > 0 ? (
+          <button className="primary big" onClick={() => setRevealed(true)}>Prüfen</button>
         ) : (
           <button className="primary big" onClick={() => setRevealed(true)}>
-            Lösung zeigen
+            {choice ? 'Weiß ich nicht' : 'Lösung zeigen'}
           </button>
         )}
       </footer>

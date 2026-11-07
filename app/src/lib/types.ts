@@ -1,6 +1,6 @@
 // Typen passend zu supabase/migrations/20261106120000_lernobjekte.sql
 
-export type ItemType = 'karteikarte' | 'verstaendnisfrage' | 'single_choice' | 'rechenaufgabe'
+export type ItemType = 'karteikarte' | 'verstaendnisfrage' | 'single_choice' | 'multiple_choice' | 'rechenaufgabe'
 
 export interface Item {
   id: number
@@ -9,7 +9,8 @@ export interface Item {
   type: ItemType
   question: string
   answer: string
-  options: { choices: string[]; correct: number } | null
+  /** single_choice: correct ist eine Position, multiple_choice: Liste von Positionen (ab 0) */
+  options: { choices: string[]; correct: number | number[] } | null
   source_file: string | null
   source_page: number | null
 }

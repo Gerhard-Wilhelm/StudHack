@@ -498,3 +498,104 @@ code { font-size: 0.9em; }
 }
 .info-hint { font-size: 0.85rem; font-weight: 400; color: var(--muted); }
 .md.note a { color: var(--ink); text-underline-offset: 2px; }
+
+/* Auswahlfragen ---------------------------------------------------------- */
+
+.choice { display: flex; align-items: flex-start; gap: 10px; }
+.choice .md { flex: 1; }
+.choice.selected {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 9%, var(--card));
+}
+.choice.missed { border-color: var(--easy); border-style: dashed; }
+.choice-note {
+  align-self: center;
+  font-size: 0.8rem;
+  color: var(--easy);
+  white-space: nowrap;
+}
+.checkbox {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  border: 2px solid var(--edge);
+  border-radius: 5px;
+  background: var(--card);
+}
+.choice.selected .checkbox,
+.choice.correct .checkbox,
+.choice.wrong .checkbox { border-color: currentColor; }
+.choice.selected .checkbox { background: var(--ink); border-color: var(--ink); }
+.choice.chosen.correct .checkbox { background: var(--easy); border-color: var(--easy); }
+.choice.chosen.wrong .checkbox { background: var(--rule); border-color: var(--rule); }
+.choice-hint { margin: var(--line) 0 0; font-size: 0.9rem; color: var(--muted); }
+.choice-hint + .choices { margin-top: 8px; }
+.verdict { margin: 12px 0 0; font-weight: 650; font-size: 0.95rem; }
+.verdict.ok { color: var(--easy); }
+.verdict.bad { color: var(--rule); }
+
+.rate.is-suggested { box-shadow: 0 0 0 3px var(--desk), 0 0 0 5px var(--c); }
+.rate.good.is-suggested { box-shadow: 0 0 0 3px var(--desk), 0 0 0 5px var(--ink); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Freigabe-Liste --------------------------------------------------------- */
+
+.drafts-row { margin-top: -8px; }
+.drafts-lead { font-size: 1.05rem; color: var(--muted); margin: 8px 0 20px; }
+
+.draft-group { margin: 0 0 28px; }
+.draft-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--rule);
+}
+.draft-group-head h2 {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.2rem;
+}
+.draft-group-head .link { white-space: nowrap; }
+
+.draft {
+  margin: 0 0 14px;
+  padding: 14px 16px 16px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+}
+.draft-type { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); }
+.draft .md { line-height: 1.5; }
+.draft-question { font-weight: 600; margin-bottom: 10px; }
+.draft-choices { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.draft-choices li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--edge);
+}
+.draft-choices li.is-correct {
+  border-color: var(--easy);
+  background: color-mix(in srgb, var(--easy) 10%, var(--card));
+}
+.draft-mark { flex: none; width: 3.6em; font-size: 0.75rem; color: var(--muted); }
+.draft-choices li.is-correct .draft-mark { color: var(--easy); font-weight: 650; }
+.draft-answer { color: var(--ink); font-size: 1rem; }
+.draft .source { margin: 8px 0 0; }
+.draft-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }

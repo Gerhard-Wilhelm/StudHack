@@ -65,4 +65,36 @@ export const DEMO_ITEMS: Item[] = [
     options: { choices: ['Nominalskala', 'Ordinalskala', 'Intervallskala', 'Verhältnisskala'], correct: 1 },
     source_file: 'Demo_Statistik.pdf', source_page: 11,
   },
+  {
+    id: 11, module: 'Statistik', week: 3, type: 'multiple_choice',
+    question: 'Welche Maße beschreiben die Streuung einer Verteilung? (mehrere Antworten möglich)',
+    answer: 'Varianz und Spannweite messen, wie weit die Werte auseinanderliegen. Median und Modus sind Lagemaße.',
+    options: { choices: ['Varianz', 'Median', 'Spannweite', 'Modus'], correct: [0, 2] },
+    source_file: 'Demo_Statistik.pdf', source_page: 12,
+  },
+]
+
+/** Entwürfe, wie sie der Generator anlegen würde, für die Freigabe-Liste in der Demo. */
+export const DEMO_DRAFTS: Item[] = [
+  {
+    id: 101, module: 'Finanzen', week: 1, type: 'single_choice',
+    question: 'Du legst $500$ € für ein Jahr zu $4\\,\\%$ an. Wie hoch ist der Endwert?',
+    answer: '$500 \\cdot 1{,}04 = 520$ €. 504 € entsteht, wenn man 4 € statt 4 % rechnet.',
+    options: { choices: ['520 €', '504 €', '540 €', '500 €'], correct: 0 },
+    source_file: 'Demo_Finanzen.pdf', source_page: 4,
+  },
+  {
+    id: 102, module: 'Finanzen', week: 1, type: 'multiple_choice',
+    question: 'Was erhöht den Barwert einer künftigen Zahlung? (mehrere Antworten möglich)',
+    answer: 'Ein niedrigerer Zins und eine kürzere Laufzeit verringern die Abzinsung. Höhere Zinsen und längere Laufzeiten senken den Barwert.',
+    options: { choices: ['Niedrigerer Zins', 'Längere Laufzeit', 'Kürzere Laufzeit', 'Höherer Zins'], correct: [0, 2] },
+    source_file: 'Demo_Finanzen.pdf', source_page: 7,
+  },
+  {
+    id: 103, module: 'Statistik', week: 1, type: 'single_choice',
+    question: 'Welches Lagemaß ändert sich nicht, wenn der größte Wert verdoppelt wird?',
+    answer: 'Der Median hängt nur von der Mitte der sortierten Daten ab. Mittelwert und Summe steigen, die Spannweite auch.',
+    options: { choices: ['Median', 'Arithmetisches Mittel', 'Spannweite', 'Summe der Werte'], correct: 0 },
+    source_file: 'Demo_Statistik.pdf', source_page: 5,
+  },
 ]
