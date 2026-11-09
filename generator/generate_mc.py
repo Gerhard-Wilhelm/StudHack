@@ -21,6 +21,7 @@ import hashlib
 import json
 import re
 import sys
+import time
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -36,6 +37,8 @@ PREISE = {"input": 2.0, "output": 10.0, "cache_write": 2.5, "cache_read": 0.2}
 TEXT_DIR = PROJECT_DIR / "cache" / "text"
 SEITE = re.compile(r"^--- Seite (\d+) ---$", re.MULTILINE)
 MAX_FOLIENTEXT = 4000
+# Verbindungsabbrüche mitten in einer gestreamten Antwort wiederholt das SDK nicht selbst
+VERSUCHE = 3
 
 SYSTEM = """Du erstellst und prüfst Auswahlfragen für die Klausurvorbereitung eines Studenten der \
 Wirtschaftswissenschaften an der Martin-Luther-Universität Halle-Wittenberg.
@@ -129,6 +132,10 @@ SCHEMA_URTEILE = {
 
 class Abgelehnt(Exception):
     """Claude hat die Anfrage abgelehnt oder nicht zu Ende geschrieben."""
+
+
+class Verbindung(Exception):
+    """Die Verbindung zur API ist auch nach mehreren Versuchen abgebrochen."""
 
 
 @dataclass
@@ -225,22 +232,38 @@ def folienseite(datei: str, seite: int, text_dir: Path = TEXT_DIR) -> str | None
 
 
 def frage_claude(client, notiz_text: str, aufgabe: str, schema: dict, effort: str, kosten: Kosten) -> dict:
-    """Ein Aufruf mit festem JSON-Format. Notiz zuerst und gecacht, damit der Prüfaufruf sie günstig liest."""
-    resp = client.beta.messages.create(
-        model=MODEL,
-        max_tokens=16000,
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",
-        system=SYSTEM,
-        output_config={"effort": effort, "format": {"type": "json_schema", "schema": schema}},
-        messages=[{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": f"Wochennotiz:\n\n{notiz_text}", "cache_control": {"type": "ephemeral"}},
-                {"type": "text", "text": aufgabe},
-            ],
-        }],
-    )
+    """Ein Aufruf mit festem JSON-Format. Notiz zuerst und gecacht, damit der Prüfaufruf sie günstig liest.
+
+    Gestreamt, damit die Verbindung während Claude nachdenkt nicht still steht und von Router
+    oder VPN gekappt wird. Bricht sie trotzdem ab, versuchen wir es mit wachsender Pause erneut.
+    """
+    import anthropic
+
+    for versuch in range(1, VERSUCHE + 1):
+        try:
+            with client.beta.messages.stream(
+                model=MODEL,
+                max_tokens=32000,
+                betas=["server-side-fallback-2026-07-01"],
+                fallbacks="default",
+                system=SYSTEM,
+                output_config={"effort": effort, "format": {"type": "json_schema", "schema": schema}},
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": f"Wochennotiz:\n\n{notiz_text}", "cache_control": {"type": "ephemeral"}},
+                        {"type": "text", "text": aufgabe},
+                    ],
+                }],
+            ) as stream:
+                resp = stream.get_final_message()
+            break
+        except anthropic.APIConnectionError:
+            if versuch == VERSUCHE:
+                raise Verbindung(f"Verbindung {VERSUCHE} Mal unterbrochen")
+            pause = 10 * versuch
+            print(f"  Verbindung unterbrochen, neuer Versuch in {pause} Sekunden")
+            time.sleep(pause)
     kosten.add(resp.usage)
     if resp.stop_reason == "refusal":
         raise Abgelehnt("Claude hat die Anfrage abgelehnt")
@@ -350,7 +373,8 @@ def main() -> int:
 
     load_dotenv(PROJECT_DIR / ".env")
     try:
-        client = anthropic.Anthropic()
+        # Mehr Wiederholungen beim Verbindungsaufbau als die zwei des SDK
+        client = anthropic.Anthropic(max_retries=4)
     except anthropic.AnthropicError:
         sys.exit("ANTHROPIC_API_KEY fehlt in .env (siehe .env.example).")
 
@@ -366,6 +390,7 @@ def main() -> int:
 
     kosten = Kosten()
     behalten_gesamt = verworfen_gesamt = angelegt = 0
+    fehlgeschlagen: list[str] = []
     for n in notizen:
         s, m = anzahl(cfg, n.modul)
         if s + m == 0:
@@ -375,11 +400,17 @@ def main() -> int:
             behalten, verworfen = erzeuge(client, n, s, m, kosten)
         except Abgelehnt as e:
             print(f"  übersprungen: {e}")
+            fehlgeschlagen.append(f"{n.modul} W{n.woche:02d} ({e})")
+            continue
+        except Verbindung as e:
+            print(f"  übersprungen: {e}")
+            fehlgeschlagen.append(f"{n.modul} W{n.woche:02d} (Verbindung)")
             continue
         except anthropic.AuthenticationError:
             sys.exit("Der API-Schlüssel wird nicht angenommen. Prüfe ANTHROPIC_API_KEY in .env.")
         except anthropic.APIStatusError as e:
             print(f"  übersprungen: API-Fehler {e.status_code}: {e.message}")
+            fehlgeschlagen.append(f"{n.modul} W{n.woche:02d} (API-Fehler {e.status_code})")
             continue
         for f in behalten:
             zeige(f)
@@ -394,6 +425,10 @@ def main() -> int:
     print(f"\nFragen behalten: {behalten_gesamt}, verworfen: {verworfen_gesamt}")
     print(f"Token: {kosten.input} Eingabe, {kosten.cache_write} in den Cache, {kosten.cache_read} aus dem Cache, "
           f"{kosten.output} Ausgabe. Kosten: {kosten.dollar:.2f} Dollar")
+    if fehlgeschlagen:
+        print(f"Nicht bearbeitet: {', '.join(fehlgeschlagen)}")
+        if db:
+            print("Ein erneuter Aufruf mit --schreiben holt nur diese Notizen nach.")
     if db:
         print(f"Als Entwürfe angelegt: {angelegt}. Freigeben in der App unter \"Entwürfe prüfen\".")
     else:
