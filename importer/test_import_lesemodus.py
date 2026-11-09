@@ -73,6 +73,16 @@ class AufbereitenTest(unittest.TestCase):
             self.assertNotIn(f"## {titel}", m.text)
         self.assertNotIn("Arbeitsnotiz", m.text)
         self.assertNotIn("# Testmodul", m.text)
+        self.assertIsNone(m.pruefung)
+
+    def test_klausurtermin_aus_config(self):
+        import datetime
+        cfg = {"module": {"TST": {"pruefung": datetime.date(2027, 2, 10)}}}
+        pfad = self.vault / "01 Module" / "Testmodul" / "Testmodul.md"
+        m = parse_overview(pfad, self.vault, cfg)
+        self.assertEqual(m.pruefung, "2027-02-10")
+        self.assertEqual(m.als_zeile("u")["exam_date"], "2027-02-10")
+        self.assertNotEqual(m.hash, parse_overview(pfad, self.vault).hash)
 
     def test_notiz_ohne_karteikarten_und_mit_bildpfad(self):
         n = parse_note(self.vault / "01 Module" / "Testmodul" / "TST W01 Einstieg.md", self.vault)

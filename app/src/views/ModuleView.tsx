@@ -1,3 +1,4 @@
+import { daysUntil, formatDate, formatExam } from '../lib/exams'
 import type { Counts } from '../lib/queue'
 import type { ModuleInfo, NoteSummary } from '../lib/types'
 
@@ -10,6 +11,7 @@ export interface WeekRow {
 export function ModuleView(props: {
   module: string
   info?: ModuleInfo
+  now: Date
   weeks: WeekRow[]
   notesError: string | null
   onOpenWeek: (week: number | null) => void
@@ -28,6 +30,11 @@ export function ModuleView(props: {
       {props.info && (
         <>
           <p className="module-fullname">{props.info.name}</p>
+          {props.info.exam_date && (
+            <p className={`exam-line ${daysUntil(props.info.exam_date, props.now) < 0 ? 'is-past' : ''}`}>
+              {formatExam(props.info.exam_date, props.now)}, {formatDate(props.info.exam_date)}
+            </p>
+          )}
           <button className="info-row" onClick={props.onOpenInfo}>
             <span>Infos zum Modul</span>
             <span className="info-hint">Eckdaten, Ablauf, Lernmethoden</span>

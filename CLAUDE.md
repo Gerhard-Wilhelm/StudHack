@@ -39,7 +39,7 @@ am iPhone ab.
 ## Aufbau
 
 Bestehend:
-- `config.yaml`: Module, Kurs-IDs, Vault-Pfad
+- `config.yaml`: Module, Kurs-IDs, gewählter Klausurtermin (`pruefung`), Vault-Pfad, Anzahl Auswahlfragen
 - `scanner/client.py`: API-Zugriff und Anmeldung
 - `scanner/scan.py`: Abgleich, Download, Bericht (Einstiegspunkt)
 - `scanner/auto.py`: täglicher Scan per launchd (07:30) mit macOS-Mitteilung bei neuen Dateien, Protokoll in `logs/` (lokal, nicht im Repository). Einrichten und Abschalten mit `scripts/scan_einrichten.sh` (`--entfernen`)
@@ -50,10 +50,11 @@ Bestehend:
 - `importer/import_lesemodus.py`: Wochennotizen (ohne Karteikarten-Abschnitt) nach Tabelle notes, Modulübersichten (ohne Wochen und Offene Fragen) nach Tabelle modules, eingebettete Folienbilder verkleinert in den privaten Bucket folien (Standard Trockenlauf, `--schreiben` lädt hoch, Bildcache in `cache/folien/`, Tests: `python -m unittest importer.test_import_lesemodus`)
 - `generator/generate_mc.py`: Auswahlfragen (Single Choice, Mehrfachauswahl) aus den Wochennotizen mit Claude Sonnet 5.5, Prüfdurchlauf gegen Notiz und Folientext aus `cache/text/`, Anzahl je Modul in `config.yaml` unter `auswahlfragen`. Ohne Filter nur Auflistung, mit `--notiz`/`--modul` Probelauf mit API, `--schreiben` legt Entwürfe an. Schlüssel `ANTHROPIC_API_KEY` in `.env`. Tests: `python -m unittest generator.test_generate_mc`
 - `wochenlauf.py`: Vorschau und danach Karten-Import, Lesemodus-Import und Auswahlfragen in einem Befehl (`python -m wochenlauf`, `--ohne-fragen`, `--ja`)
-- `supabase/migrations/`: Datenmodell (Tabellen items, card_states, reviews, notes, modules, Bucket folien)
+- `supabase/migrations/`: Datenmodell (Tabellen items, card_states, reviews, notes, modules mit Klausurtermin, Bucket folien)
 - `app/`: PWA (Vite, React, TypeScript). Login, Startseite, Wochenliste je Modul,
   Modulinfo, Wochenansicht mit Notiz, Folienbildern und Mermaid, Lernen mit FSRS
-  inklusive Auswahlfragen, Freigabe-Liste für Entwürfe,
+  inklusive Auswahlfragen, Freigabe-Liste für Entwürfe, Klausur-Countdown,
+  neue Karten nach Klausurnähe verteilt, Module nach der Klausur pausiert,
   Demo-Modus. Schlüssel in `app/.env.local`, Details in `app/README.md`
 
 Geplant:

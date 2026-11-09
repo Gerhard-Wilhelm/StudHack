@@ -116,7 +116,9 @@ export class SupabaseStore implements Store {
 
   async loadModules(): Promise<ModuleInfo[]> {
     try {
-      const { data, error } = await this.sb.from('modules').select('module,name,body').order('module')
+      const mit = await this.sb.from('modules').select('module,name,body,exam_date').order('module')
+      // Migration 20261110120000_klausurtermine noch nicht eingespielt: ohne Termin weiter
+      const { data, error } = mit.error ? await this.sb.from('modules').select('module,name,body').order('module') : mit
       if (error) throw error
       writeJson(MODULES_CACHE_KEY, data)
       return data as ModuleInfo[]

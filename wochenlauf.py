@@ -55,7 +55,7 @@ def vorschau(cfg: dict, vault: Path, db: Vorschau, mit_fragen: bool) -> None:
 
     def lesen():
         notizen = [n for n in (lesemodus.parse_note(p, vault) for p in find_notes(vault, None, None)) if n]
-        module = [m for m in (lesemodus.parse_overview(p, vault) for p in lesemodus.find_overviews(vault, None)) if m]
+        module = [m for m in (lesemodus.parse_overview(p, vault, cfg) for p in lesemodus.find_overviews(vault, None)) if m]
         vorhanden = db.existing_notes()
         n_neu = sum(1 for n in notizen if n.notiz not in vorhanden)
         n_geaendert = sum(1 for n in notizen if n.notiz in vorhanden and vorhanden[n.notiz] != n.hash)

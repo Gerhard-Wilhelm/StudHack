@@ -1,3 +1,4 @@
+import { formatExam } from '../lib/exams'
 import type { Overview } from '../lib/queue'
 
 function plural(n: number, one: string, many: string) {
@@ -7,6 +8,8 @@ function plural(n: number, one: string, many: string) {
 export function Home(props: {
   overview: Overview
   names: Record<string, string>
+  exams: Record<string, string>
+  now: Date
   pending: number
   drafts: number
   onOpenDrafts: () => void
@@ -50,12 +53,18 @@ export function Home(props: {
         <ul className="modules">
           {modules.map((m) => {
             const empty = m.due + m.fresh === 0
+            const name = props.names[m.module]
+            const exam = props.exams[m.module] ? formatExam(props.exams[m.module], props.now) : null
             return (
               <li key={m.module}>
-                <button className={`module ${empty ? 'is-empty' : ''}`} onClick={() => props.onOpenModule(m.module)}>
+                <button
+                  className={`module ${empty ? 'is-empty' : ''} ${m.written ? 'is-written' : ''}`}
+                  onClick={() => props.onOpenModule(m.module)}
+                >
                   <span className="module-label">
                     <span className="module-name">{m.module}</span>
-                    {props.names[m.module] && <span className="module-sub">{props.names[m.module]}</span>}
+                    {name && <span className="module-sub">{name}</span>}
+                    {exam && <span className={`module-exam ${m.written ? 'is-past' : ''}`}>{exam}</span>}
                   </span>
                   <span className="module-counts">
                     <span className="count due" aria-label={`${m.due} fällig`}>{m.due}</span>

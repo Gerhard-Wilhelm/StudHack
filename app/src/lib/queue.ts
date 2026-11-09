@@ -14,10 +14,13 @@ function byWeekThenId(a: StudyCard, b: StudyCard): number {
   return wa - wb || a.item.id - b.item.id
 }
 
-/** Erst fällige Wiederholungen nach Fälligkeit, dann neue Karten nach Woche. */
+/**
+ * Erst fällige Wiederholungen nach Fälligkeit, dann neue Karten nach Woche.
+ * Mit newQuota bekommt jedes Modul höchstens so viele neue Karten (Verteilung nach Klausurnähe).
+ */
 export function buildQueue(
   cards: StudyCard[],
-  opts: { now: Date; newLimit: number; module?: string; week?: number | null },
+  opts: { now: Date; newLimit: number; module?: string; week?: number | null; newQuota?: Record<string, number> },
 ): StudyCard[] {
   const pool = cards.filter(
     (c) =>
@@ -27,8 +30,16 @@ export function buildQueue(
   const due = pool
     .filter((c) => isDue(c, opts.now))
     .sort((a, b) => new Date(a.state.due).getTime() - new Date(b.state.due).getTime())
-  const fresh = pool.filter(isNew).sort(byWeekThenId).slice(0, opts.newLimit)
-  return [...due, ...fresh]
+  let fresh = pool.filter(isNew).sort(byWeekThenId)
+  if (opts.newQuota && opts.module === undefined) {
+    const taken: Record<string, number> = {}
+    fresh = fresh.filter((c) => {
+      const m = c.item.module
+      taken[m] = (taken[m] ?? 0) + 1
+      return taken[m] <= (opts.newQuota![m] ?? 0)
+    })
+  }
+  return [...due, ...fresh.slice(0, opts.newLimit)]
 }
 
 export interface Counts {
@@ -38,11 +49,21 @@ export interface Counts {
 
 export interface Overview {
   total: Counts
-  modules: (Counts & { module: string })[]
+  modules: (Counts & { module: string; written?: boolean })[]
 }
 
-/** Zahlen für die Startseite. Neue Karten sind auf das Restkontingent gedeckelt. */
-export function overview(cards: StudyCard[], now: Date, newLimit: number): Overview {
+/** Neue Karten je Modul, Grundlage für die Verteilung des Tageslimits. */
+export function newPerModule(cards: StudyCard[]): Record<string, number> {
+  const n: Record<string, number> = {}
+  for (const c of cards) n[c.item.module] = (n[c.item.module] ?? 0) + (isNew(c) ? 1 : 0)
+  return n
+}
+
+/**
+ * Zahlen für die Startseite. Neue Karten sind auf das Restkontingent gedeckelt,
+ * mit quota zusätzlich auf den Anteil jedes Moduls.
+ */
+export function overview(cards: StudyCard[], now: Date, newLimit: number, quota?: Record<string, number>): Overview {
   const map = new Map<string, Counts>()
   for (const c of cards) {
     const m = map.get(c.item.module) ?? { due: 0, fresh: 0 }
@@ -51,10 +72,10 @@ export function overview(cards: StudyCard[], now: Date, newLimit: number): Overv
     map.set(c.item.module, m)
   }
   const modules = [...map.entries()]
-    .map(([module, m]) => ({ module, due: m.due, fresh: Math.min(m.fresh, newLimit) }))
+    .map(([module, m]) => ({ module, due: m.due, fresh: Math.min(m.fresh, newLimit, quota?.[module] ?? Infinity) }))
     .sort((a, b) => a.module.localeCompare(b.module, 'de'))
   const due = modules.reduce((s, m) => s + m.due, 0)
-  const allNew = [...map.values()].reduce((s, m) => s + m.fresh, 0)
+  const allNew = quota ? modules.reduce((s, m) => s + m.fresh, 0) : [...map.values()].reduce((s, m) => s + m.fresh, 0)
   return { total: { due, fresh: Math.min(allNew, newLimit) }, modules }
 }
 

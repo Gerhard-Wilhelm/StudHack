@@ -72,6 +72,15 @@ legt für alle Notizen ohne Fragen Entwürfe an. In der App steht dann auf der
 Startseite "Entwürfe prüfen". Freigegebene Fragen kommen sofort in den
 Lernstapel, die Antworten werden bei jeder Abfrage neu gemischt.
 
+## Klausurtermine
+
+Der gewählte Termin je Modul steht in `config.yaml` unter `pruefung` und kommt
+mit `importer.import_lesemodus --schreiben` in die Tabelle `modules` (vorher
+einmal `supabase/migrations/20261110120000_klausurtermine.sql` ausführen).
+Die App zeigt dann den Countdown, verteilt das Tageslimit neuer Karten nach
+Klausurnähe und fragt ein Modul nach seiner Klausur nicht mehr ab. In den
+Einstellungen lässt es sich für eine Wiederholungsprüfung wieder einschalten.
+
 ## Cloudflare Pages
 
 - Root directory: `app`

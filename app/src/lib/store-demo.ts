@@ -78,7 +78,8 @@ export class DemoStore implements Store {
   }
 
   async loadModules(): Promise<ModuleInfo[]> {
-    return DEMO_MODULES
+    // Kopien wie bei Supabase, sonst erkennt React Änderungen nicht
+    return DEMO_MODULES.map((m) => ({ ...m }))
   }
 
   async resolveImages(paths: string[]): Promise<Record<string, string>> {

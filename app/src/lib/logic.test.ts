@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { correctSet, evaluate, isChoice, shuffledOrder } from './choice'
+import { allocateNew, daysUntil, formatDate, formatExam, isWritten, urgency } from './exams'
 import { formatInterval, fromCard, rate, toCard } from './fsrs'
 import { advance, buildQueue, overview, weekCounts } from './queue'
 import { renderMarkdown, replaceObsidianLinks } from './render'
@@ -171,5 +172,40 @@ describe('Auswahlfragen', () => {
     const order = shuffledOrder(4, () => (seed = (seed * 9301 + 49297) % 233280 / 233280))
     expect([...order].sort()).toEqual([0, 1, 2, 3])
     expect(shuffledOrder(1)).toEqual([0])
+  })
+})
+
+describe('Klausurtermine', () => {
+  const heute = new Date(2026, 10, 9, 15, 0) // 09.11.2026 nachmittags
+
+  it('zählt Kalendertage und erkennt geschriebene Klausuren', () => {
+    expect(daysUntil('2026-11-09', heute)).toBe(0)
+    expect(daysUntil('2027-02-10', heute)).toBe(93)
+    expect(isWritten('2026-11-09', heute)).toBe(false)
+    expect(isWritten('2026-11-08', heute)).toBe(true)
+    expect(isWritten(null, heute)).toBe(false)
+    expect(formatExam('2026-11-10', heute)).toBe('Klausur morgen')
+    expect(formatDate('2027-02-19')).toBe('Fr 19.02.2027')
+  })
+
+  it('gewichtet nahe Klausuren stärker, nimmt aber keinem alles', () => {
+    const w = { BIL: urgency('2026-11-30', heute), IuF: urgency('2027-03-15', heute) }
+    const q = allocateNew({ BIL: 100, IuF: 100 }, w, 20)
+    expect(q.BIL + q.IuF).toBe(20)
+    expect(q.BIL).toBeGreaterThan(q.IuF)
+    expect(q.IuF).toBeGreaterThan(0)
+  })
+
+  it('gibt nicht gebrauchte Plätze an andere Module weiter', () => {
+    const q = allocateNew({ A: 2, B: 50 }, { A: 1, B: 0.01 }, 20)
+    expect(q).toEqual({ A: 2, B: 18 })
+    expect(allocateNew({ A: 0, B: 0 }, { A: 1, B: 1 }, 20)).toEqual({ A: 0, B: 0 })
+  })
+
+  it('hält die Quote beim Aufbau der Warteschlange ein', () => {
+    const cs = [card(1, 'A', 1), card(2, 'A', 1), card(3, 'A', 2), card(4, 'B', 1), card(5, 'B', 2)]
+    const q = buildQueue(cs, { now, newLimit: 20, newQuota: { A: 1, B: 2 } })
+    expect(q.map((c) => c.item.id).sort()).toEqual([1, 4, 5])
+    expect(overview(cs, now, 20, { A: 1, B: 2 }).total.fresh).toBe(3)
   })
 })

@@ -599,3 +599,22 @@ code { font-size: 0.9em; }
 .draft-answer { color: var(--ink); font-size: 1rem; }
 .draft .source { margin: 8px 0 0; }
 .draft-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+
+/* Klausurtermine -------------------------------------------------------- */
+
+.exam-line { margin: -8px 0 16px; font-size: 0.95rem; font-weight: 600; color: var(--rule); }
+.exam-line.is-past { color: var(--muted); font-weight: 400; }
+.module.is-written { border-left-color: var(--edge); opacity: 0.7; }
+.setting > .toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 400;
+}
+.toggle-row input { width: 22px; height: 22px; accent-color: var(--ink); }
+.module-exam { font-size: 0.8rem; font-weight: 600; color: var(--rule); }
+.module-exam.is-past { color: var(--muted); font-weight: 400; }
+.module { padding-top: 10px; padding-bottom: 10px; }

@@ -1,5 +1,11 @@
 import type { ModuleInfo, Note } from './types'
 
+/** Demo-Klausurtermin relativ zu heute, damit der Countdown in der Demo nie veraltet. */
+function inTagen(n: number): string {
+  const d = new Date(Date.now() + n * 86_400_000)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // Selbst geschriebene Demo-Notizen. Keine Folieninhalte.
 
 export const DEMO_NOTES: Note[] = [
@@ -68,7 +74,7 @@ flowchart TD
 
 export const DEMO_MODULES: ModuleInfo[] = [
   {
-    module: 'Finanzen', name: 'Finanzen für Einsteiger',
+    module: 'Finanzen', name: 'Finanzen für Einsteiger', exam_date: inTagen(12),
     body: `## Eckdaten
 
 - **Kürzel:** Finanzen
@@ -82,7 +88,7 @@ export const DEMO_MODULES: ModuleInfo[] = [
 `,
   },
   {
-    module: 'Statistik', name: 'Beschreibende Statistik',
+    module: 'Statistik', name: 'Beschreibende Statistik', exam_date: inTagen(45),
     body: `## Eckdaten
 
 - **Kürzel:** Statistik

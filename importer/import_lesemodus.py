@@ -97,10 +97,11 @@ class Modul:
     notiz: str
     bilder: list[Bild]
     fehlend: list[str]
+    pruefung: str | None = None  # gewählter Klausurtermin aus config.yaml, ISO-Datum
     hash: str = field(init=False)
 
     def __post_init__(self):
-        self.hash = hashlib.sha256(f"{self.name}\n{self.text}".encode()).hexdigest()
+        self.hash = hashlib.sha256(f"{self.name}\n{self.pruefung}\n{self.text}".encode()).hexdigest()
 
     def als_zeile(self, user_id: str) -> dict:
         return {
@@ -108,6 +109,7 @@ class Modul:
             "module": self.modul,
             "name": self.name,
             "body": self.text,
+            "exam_date": self.pruefung,
             "origin_ref": self.notiz,
             "content_hash": self.hash,
         }
@@ -171,7 +173,13 @@ def parse_note(path: Path, vault: Path) -> Notiz | None:
                  str(path.relative_to(vault)), bilder, fehlend)
 
 
-def parse_overview(path: Path, vault: Path) -> Modul | None:
+def pruefung(cfg: dict | None, modul: str) -> str | None:
+    """Gewählter Klausurtermin aus config.yaml (YAML liest ihn als Datum)."""
+    wert = ((cfg or {}).get("module", {}).get(modul) or {}).get("pruefung")
+    return str(wert) if wert else None
+
+
+def parse_overview(path: Path, vault: Path, cfg: dict | None = None) -> Modul | None:
     """Übersichtsnotiz <Modulname>.md, das Kürzel steht im Frontmatter."""
     roh = path.read_text(encoding="utf-8")
     fm = FRONTMATTER.match(roh)
@@ -180,7 +188,7 @@ def parse_overview(path: Path, vault: Path) -> Modul | None:
         return None
     modul = kuerzel.group(1).strip()
     text, bilder, fehlend = aufbereiten(roh, modul, vault, OHNE_IN_UEBERSICHT)
-    return Modul(modul, path.stem, text, str(path.relative_to(vault)), bilder, fehlend)
+    return Modul(modul, path.stem, text, str(path.relative_to(vault)), bilder, fehlend, pruefung(cfg, modul))
 
 
 def find_overviews(vault: Path, modul: str | None) -> list[Path]:
@@ -258,12 +266,13 @@ def main() -> int:
         return 1
 
     notizen = [n for n in (parse_note(p, vault) for p in pfade) if n]
-    module = [m for m in (parse_overview(p, vault) for p in uebersichten) if m]
+    module = [m for m in (parse_overview(p, vault, cfg) for p in uebersichten) if m]
     bilder = {b.pfad: b for x in [*notizen, *module] for b in x.bilder}
     for m in module:
         hinweis = f", {len(m.fehlend)} Bilder fehlen: {', '.join(m.fehlend)}" if m.fehlend else ""
         abschnitte = ", ".join(line[3:] for line in m.text.splitlines() if line.startswith("## "))
-        print(f"Übersicht {m.modul} ({m.name}): {len(m.text) // 1000} Tsd. Zeichen, Abschnitte: {abschnitte}{hinweis}")
+        termin = f", Klausur {m.pruefung}" if m.pruefung else ""
+        print(f"Übersicht {m.modul} ({m.name}){termin}: {len(m.text) // 1000} Tsd. Zeichen, Abschnitte: {abschnitte}{hinweis}")
     for n in notizen:
         hinweis = f", {len(n.fehlend)} Bilder fehlen: {', '.join(n.fehlend)}" if n.fehlend else ""
         print(f"{n.modul} W{n.woche:02d} {n.titel}: {len(n.text) // 1000} Tsd. Zeichen, {len(n.bilder)} Bilder{hinweis}")

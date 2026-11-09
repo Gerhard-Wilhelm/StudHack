@@ -63,4 +63,6 @@ export interface ModuleInfo {
   module: string
   name: string
   body: string
+  /** gewählter Klausurtermin, YYYY-MM-DD */
+  exam_date?: string | null
 }

@@ -3,6 +3,8 @@ import { DEFAULT_NEW_LIMIT, getNewLimit, introducedToday, setNewLimit } from '..
 
 export function Settings(props: {
   demo: boolean
+  written: { module: string; name?: string; active: boolean }[]
+  onToggleWritten: (module: string) => void
   onBack: () => void
   onLogout: () => void
   onResetDemo: () => void
@@ -35,6 +37,25 @@ export function Settings(props: {
           Gezählt wird auf diesem Gerät.
         </p>
       </section>
+
+      {props.written.length > 0 && (
+        <section className="setting">
+          <label>Geschriebene Klausuren</label>
+          <p className="hint">
+            Nach der Klausur fragt die App ein Modul nicht mehr ab. Für eine Wiederholungsprüfung kannst du es
+            wieder einschalten.
+          </p>
+          {props.written.map((w) => (
+            <label key={w.module} className="toggle-row">
+              <input type="checkbox" checked={w.active} onChange={() => props.onToggleWritten(w.module)} />
+              <span>
+                {w.module}
+                {w.name ? `, ${w.name}` : ''} wieder abfragen
+              </span>
+            </label>
+          ))}
+        </section>
+      )}
 
       {props.demo && (
         <section className="setting">

@@ -3,7 +3,8 @@ import type { Store } from './lib/store'
 import { DemoStore } from './lib/store-demo'
 import { SupabaseStore } from './lib/store-supabase'
 import { supabase } from './lib/supabase'
-import { buildQueue, overview, weekCounts } from './lib/queue'
+import { allocateNew, getReactivated, isWritten, setReactivated, urgency } from './lib/exams'
+import { buildQueue, newPerModule, overview, weekCounts } from './lib/queue'
 import { countIntroduced, remainingNew } from './lib/settings'
 import type { Item, ModuleInfo, NoteSummary, ReviewRecord, StudyCard } from './lib/types'
 import { Drafts } from './views/Drafts'
@@ -51,6 +52,7 @@ export function App() {
   const [notesError, setNotesError] = useState<string | null>(null)
   const [modules, setModules] = useState<ModuleInfo[]>([])
   const [drafts, setDrafts] = useState<Item[]>([])
+  const [reactivated, setReactivatedState] = useState<string[]>(getReactivated)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<View>({ name: 'home' })
   const [pending, setPending] = useState(0)
@@ -121,20 +123,40 @@ export function App() {
 
   const now = useMemo(() => new Date(), [cards, view, tick])
   const newLimit = store ? remainingNew(store.kind, now) : 0
+
+  // Klausurtermine: Module nach ihrer Klausur pausieren, neue Karten nach Klausurnähe verteilen
+  const exams = useMemo(
+    () => Object.fromEntries(modules.filter((m) => m.exam_date).map((m) => [m.module, m.exam_date!])),
+    [modules],
+  )
+  const written = useMemo(
+    () => Object.keys(exams).filter((m) => isWritten(exams[m], now)).sort((a, b) => a.localeCompare(b, 'de')),
+    [exams, now],
+  )
+  const paused = useMemo(() => new Set(written.filter((m) => !reactivated.includes(m))), [written, reactivated])
+  const activeCards = useMemo(() => cards?.filter((c) => !paused.has(c.item.module)) ?? null, [cards, paused])
+  const quota = useMemo(() => {
+    if (!activeCards) return {}
+    const available = newPerModule(activeCards)
+    const weights = Object.fromEntries(Object.keys(available).map((m) => [m, urgency(exams[m], now)]))
+    return allocateNew(available, weights, newLimit)
+  }, [activeCards, exams, now, newLimit])
+
   const ov = useMemo(() => {
-    if (!cards) return null
-    const o = overview(cards, now, newLimit)
-    // Module, zu denen es nur Notizen oder eine Übersicht und noch keine Karten gibt
+    if (!activeCards) return null
+    const o = overview(activeCards, now, newLimit, quota)
+    for (const m of o.modules) m.written = isWritten(exams[m.module], now)
+    // Module, zu denen es nur Notizen oder eine Übersicht und noch keine Karten gibt, und pausierte
     const known = new Set(o.modules.map((m) => m.module))
-    for (const module of [...notes.map((n) => n.module), ...modules.map((m) => m.module)]) {
+    for (const module of [...notes.map((n) => n.module), ...modules.map((m) => m.module), ...paused]) {
       if (!known.has(module)) {
         known.add(module)
-        o.modules.push({ module, due: 0, fresh: 0 })
+        o.modules.push({ module, due: 0, fresh: 0, written: isWritten(exams[module], now) })
       }
     }
     o.modules.sort((a, b) => a.module.localeCompare(b.module, 'de'))
     return o
-  }, [cards, notes, modules, now, newLimit])
+  }, [activeCards, notes, modules, paused, exams, now, newLimit, quota])
 
   const moduleNames = useMemo(() => Object.fromEntries(modules.map((m) => [m.module, m.name])), [modules])
 
@@ -158,13 +180,19 @@ export function App() {
   }
 
   function startStudy(filter: { module?: string; week?: number | null }, back: View) {
-    if (!cards || !store) return
+    if (!cards || !activeCards || !store) return
     const at = new Date()
-    setView({
-      name: 'study',
-      queue: buildQueue(cards, { now: at, newLimit: remainingNew(store.kind, at), ...filter }),
-      back,
-    })
+    // Ein Modul gezielt geöffnet: auch pausierte abfragen. Sonst nur aktive, neue Karten nach Quote.
+    const queue = filter.module
+      ? buildQueue(cards, { now: at, newLimit: remainingNew(store.kind, at), ...filter })
+      : buildQueue(activeCards, { now: at, newLimit: remainingNew(store.kind, at), newQuota: quota })
+    setView({ name: 'study', queue, back })
+  }
+
+  function toggleReactivated(module: string) {
+    const next = reactivated.includes(module) ? reactivated.filter((m) => m !== module) : [...reactivated, module]
+    setReactivated(next)
+    setReactivatedState(next)
   }
 
   async function logout() {
@@ -198,6 +226,8 @@ export function App() {
     body = (
       <Settings
         demo={store.kind === 'demo'}
+        written={written.map((m) => ({ module: m, name: moduleNames[m], active: reactivated.includes(m) }))}
+        onToggleWritten={toggleReactivated}
         onBack={() => setView({ name: 'home' })}
         onLogout={logout}
         onResetDemo={() => {
@@ -225,6 +255,7 @@ export function App() {
       <ModuleView
         module={view.module}
         info={modules.find((m) => m.module === view.module)}
+        now={now}
         weeks={weekRows(view.module)}
         notesError={notesError}
         onOpenWeek={(week) => setView({ name: 'week', module: view.module, week })}
@@ -276,6 +307,8 @@ export function App() {
       <Home
         overview={ov}
         names={moduleNames}
+        exams={exams}
+        now={now}
         pending={pending}
         drafts={drafts.length}
         onOpenDrafts={() => setView({ name: 'drafts' })}
