@@ -179,8 +179,31 @@ class Supabase:
 
     def update(self, row_id: int, item: Item) -> None:
         z = item.als_zeile()
-        patch = {k: z[k] for k in ("answer", "source_file", "source_page", "week", "origin_ref")}
+        patch = {k: z[k] for k in VERGLICHEN}
         self._check(self.s.patch(f"{self.url}/rest/v1/items", params={"id": f"eq.{row_id}"}, json=patch, timeout=30))
+
+
+VERGLICHEN = ("answer", "source_file", "source_page", "week", "origin_ref")
+
+
+def aenderungen(items: list[Item], existing: dict[str, dict]) -> tuple[list[Item], list[tuple[int, Item]]]:
+    """Neue Lernobjekte und importierte, deren Lösung, Quelle oder Woche sich geändert hat."""
+    neu = [it for it in items if it.hash not in existing]
+    geaendert = [(existing[it.hash]["id"], it) for it in items if it.hash in existing
+                 and existing[it.hash]["origin"] == "import"
+                 and any(existing[it.hash][k] != v for k, v in it.als_zeile().items() if k in VERGLICHEN)]
+    return neu, geaendert
+
+
+def lese_alle(vault: Path, modul: str | None = None, notiz: str | None = None) -> list[Item]:
+    """Alle Lernobjekte aus den passenden Notizen, Doppelte (gleicher Hash) nur einmal."""
+    items, seen = [], set()
+    for note in find_notes(vault, modul, notiz):
+        for it in parse_note(note, vault):
+            if it.hash not in seen:
+                seen.add(it.hash)
+                items.append(it)
+    return items
 
 
 def main() -> int:
@@ -225,12 +248,7 @@ def main() -> int:
         return 0
 
     db = Supabase()
-    existing = db.existing()
-    neu = [it for it in items if it.hash not in existing]
-    geaendert = [(existing[it.hash]["id"], it) for it in items if it.hash in existing
-                 and existing[it.hash]["origin"] == "import"
-                 and any(existing[it.hash][k] != v for k, v in it.als_zeile().items()
-                         if k in ("answer", "source_file", "source_page", "week", "origin_ref"))]
+    neu, geaendert = aenderungen(items, db.existing())
     db.insert(neu)
     for row_id, it in geaendert:
         db.update(row_id, it)

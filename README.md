@@ -26,6 +26,30 @@ Danach `.env` öffnen und Uni-Kennung und Passwort eintragen.
 
 Downloads landen in `Studium Vault/06 Anhänge/<Kürzel>/`, der Bericht in `reports/`.
 
+### Täglicher Scan
+
+```bash
+scripts/scan_einrichten.sh                               # täglich 07:30 einrichten
+launchctl kickstart -k gui/$(id -u)/de.studhack.scan     # sofort einmal ausführen
+scripts/scan_einrichten.sh --entfernen                   # wieder abschalten
+```
+
+Bei neuen Dateien kommt eine macOS-Mitteilung, sonst bleibt es still. Protokoll in
+`logs/scan.log`. Voraussetzung: Uni-Kennung und Passwort in `.env` (ein
+Sitzungs-Cookie läuft ab). Verpasste Läufe holt macOS beim Aufwachen nach.
+
+## Wochenbefehl
+
+Nachdem die neuen Wochennotizen geschrieben sind:
+
+```bash
+.venv/bin/python -m wochenlauf
+```
+
+Zeigt erst, was neu ist (Karten, Notizen, Bilder, Notizen ohne Auswahlfragen samt
+geschätzter Kosten), fragt dann und führt Importer, Lesemodus-Import und Generator
+nacheinander aus. `--ohne-fragen` lässt die Auswahlfragen weg.
+
 ## Importer
 
 Überträgt Karteikarten und Verständnisfragen aus den Wochennotizen nach Supabase.

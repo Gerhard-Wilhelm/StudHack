@@ -99,6 +99,37 @@ def write_report(found: list[dict], modules: dict) -> Path:
     return report
 
 
+def run(cfg: dict, api: StudIP, modul: str | None = None, dry_run: bool = False,
+        log=print) -> tuple[list[dict], Path | None]:
+    """Gleicht alle (oder ein) Modul ab. Gibt die gefundenen Dateien und den Bericht zurück.
+
+    Wirft AuthError, wenn die Anmeldung scheitert, und ValueError bei unbekanntem Modul.
+    """
+    modules = cfg["module"]
+    if modul:
+        if modul not in modules:
+            raise ValueError(f"Unbekanntes Modul {modul}. Verfügbar: {', '.join(modules)}")
+        modules = {modul: modules[modul]}
+
+    attach_dir = Path(cfg["vault"]).expanduser() / "06 Anhänge"
+    state = load_state()
+    found = []
+    for kuerzel, m in modules.items():
+        if not m.get("kurse"):
+            log(f"{kuerzel}: keine Kurs-IDs in config.yaml, übersprungen")
+            continue
+        items = scan_module(api, kuerzel, m, state, attach_dir, dry_run)
+        log(f"{kuerzel}: {len(items)} neue oder geänderte Dateien")
+        for f in items:
+            log(f"  [{f['status']}] {f['ordner']} / {f['name']}")
+        found += items
+        if not dry_run:
+            save_state(state)
+
+    report = write_report(found, cfg["module"]) if found and not dry_run else None
+    return found, report
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Stud.IP Materialien ins Studium Vault laden")
     p.add_argument("--dry-run", action="store_true", help="nur anzeigen, nichts herunterladen")
@@ -119,33 +150,16 @@ def main() -> int:
                 print(f"{c['id']}  {c['attributes']['title']}")
             return 0
 
-        modules = cfg["module"]
-        if args.modul:
-            if args.modul not in modules:
-                print(f"Unbekanntes Modul {args.modul}. Verfügbar: {', '.join(modules)}")
-                return 1
-            modules = {args.modul: modules[args.modul]}
-
-        attach_dir = Path(cfg["vault"]).expanduser() / "06 Anhänge"
-        state = load_state()
-        found = []
-        for kuerzel, modul in modules.items():
-            if not modul.get("kurse"):
-                print(f"{kuerzel}: keine Kurs-IDs in config.yaml, übersprungen")
-                continue
-            items = scan_module(api, kuerzel, modul, state, attach_dir, args.dry_run)
-            print(f"{kuerzel}: {len(items)} neue oder geänderte Dateien")
-            for f in items:
-                print(f"  [{f['status']}] {f['ordner']} / {f['name']}")
-            found += items
-            if not args.dry_run:
-                save_state(state)
+        _, report = run(cfg, api, args.modul, args.dry_run)
+    except ValueError as e:
+        print(e)
+        return 1
     except AuthError as e:
         print(f"Fehler: {e}")
         return 2
 
-    if found and not args.dry_run:
-        print(f"Bericht: {write_report(found, cfg['module'])}")
+    if report:
+        print(f"Bericht: {report}")
     return 0
 
 
