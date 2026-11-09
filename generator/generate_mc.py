@@ -232,7 +232,8 @@ def folienseite(datei: str, seite: int, text_dir: Path = TEXT_DIR) -> str | None
 
 
 def frage_claude(client, notiz_text: str, aufgabe: str, schema: dict, effort: str, kosten: Kosten) -> dict:
-    """Ein Aufruf mit festem JSON-Format. Notiz zuerst und gecacht, damit der Prüfaufruf sie günstig liest.
+    """Ein Aufruf mit festem JSON-Format. Ohne Prompt-Cache: Das JSON-Format gehört zum gecachten
+    Anfang und ist bei Erzeugen und Prüfen verschieden, der Cache würde nur Schreibaufschlag kosten.
 
     Gestreamt, damit die Verbindung während Claude nachdenkt nicht still steht und von Router
     oder VPN gekappt wird. Bricht sie trotzdem ab, versuchen wir es mit wachsender Pause erneut.
@@ -251,7 +252,7 @@ def frage_claude(client, notiz_text: str, aufgabe: str, schema: dict, effort: st
                 messages=[{
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": f"Wochennotiz:\n\n{notiz_text}", "cache_control": {"type": "ephemeral"}},
+                        {"type": "text", "text": f"Wochennotiz:\n\n{notiz_text}"},
                         {"type": "text", "text": aufgabe},
                     ],
                 }],
