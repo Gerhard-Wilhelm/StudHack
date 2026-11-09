@@ -38,6 +38,9 @@ am iPhone ab.
 
 ## Aufbau
 
+Gesamtbild mit Ablaufdiagramm, Datenmodell und Einrichtung in `README.md`,
+Bedienung für Gerhard im Vault unter `00 Kontext/Lernassistent Anleitung.md`.
+
 Bestehend:
 - `config.yaml`: Module, Kurs-IDs, gewählter Klausurtermin (`pruefung`), Vault-Pfad, Anzahl Auswahlfragen
 - `scanner/client.py`: API-Zugriff und Anmeldung
