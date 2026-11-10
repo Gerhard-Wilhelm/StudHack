@@ -81,6 +81,13 @@ Die App zeigt dann den Countdown, verteilt das Tageslimit neuer Karten nach
 Klausurnähe und fragt ein Modul nach seiner Klausur nicht mehr ab. In den
 Einstellungen lässt es sich für eine Wiederholungsprüfung wieder einschalten.
 
+## Lernplan
+
+Seite "Plan" (Startseite oben rechts): Wochenansicht mit 2-Stunden-Blöcken je Modul,
+Tippen öffnet das Menü, lange drücken und ziehen verschiebt. Vorschlag nach
+Klausurnähe oder Vorwoche übernehmen. Gespeichert in `study_blocks` (Migration
+`20261111120000_lernplan.sql`), `kalender.py` schreibt den Plan in den Vault.
+
 ## Cloudflare Pages
 
 - Root directory: `app`

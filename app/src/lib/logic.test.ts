@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { correctSet, evaluate, isChoice, shuffledOrder } from './choice'
 import { allocateNew, daysUntil, formatDate, formatExam, isWritten, urgency } from './exams'
 import { formatInterval, fromCard, rate, toCard } from './fsrs'
+import { addMinutes, copyWeek, formatDay, hoursPerModule, isoWeek, suggestWeek, timeSlots, weekStart } from './plan'
 import { advance, buildQueue, overview, weekCounts } from './queue'
 import { renderMarkdown, replaceObsidianLinks } from './render'
 import type { CardStateFields, Item, StudyCard } from './types'
@@ -207,5 +208,44 @@ describe('Klausurtermine', () => {
     const q = buildQueue(cs, { now, newLimit: 20, newQuota: { A: 1, B: 2 } })
     expect(q.map((c) => c.item.id).sort()).toEqual([1, 4, 5])
     expect(overview(cs, now, 20, { A: 1, B: 2 }).total.fresh).toBe(3)
+  })
+})
+
+describe('Lernplan', () => {
+  it('rechnet Wochen, Kalenderwochen und Zeiten', () => {
+    expect(weekStart('2026-11-12')).toBe('2026-11-09')
+    expect(weekStart('2026-11-15')).toBe('2026-11-09')
+    expect(isoWeek('2026-11-09')).toBe(46)
+    expect(isoWeek('2027-01-04')).toBe(1)
+    expect(formatDay('2026-11-10')).toBe('Di 10.11.')
+    expect(addMinutes('18:30', 120)).toBe('20:30')
+    expect(timeSlots()[0]).toBe('06:00')
+    expect(timeSlots().at(-1)).toBe('20:00')
+  })
+
+  it('schlägt eine Woche nach Klausurnähe vor', () => {
+    const exams = { BIL: '2026-11-20', IuF: '2027-03-15', GVWL: '2027-03-31' }
+    const v = suggestWeek('2026-11-09', exams, 6)
+    expect(v).toHaveLength(6)
+    const n = (m: string) => v.filter((b) => b.module === m).length
+    expect(n('IuF')).toBeGreaterThanOrEqual(1)
+    expect(n('GVWL')).toBeGreaterThanOrEqual(1)
+    expect(n('BIL')).toBeGreaterThan(n('GVWL'))
+    expect(new Set(v.map((b) => `${b.day} ${b.start_time}`)).size).toBe(6)
+    expect(v.every((b) => b.day >= '2026-11-09' && b.day <= '2026-11-15')).toBe(true)
+    expect(suggestWeek('2026-11-09', { BIL: '2026-01-01' })).toEqual([])
+    // Laufende Woche ab Donnerstag: nichts vor Donnerstag, entsprechend weniger Blöcke
+    const ab = suggestWeek('2026-11-09', exams, 9, '2026-11-12')
+    expect(ab.every((b) => b.day >= '2026-11-12')).toBe(true)
+    expect(ab.length).toBeGreaterThan(0)
+    expect(ab.length).toBeLessThan(9)
+  })
+
+  it('kopiert eine Woche und summiert Stunden', () => {
+    const alt = [{ id: 1, module: 'MAK', day: '2026-11-03', start_time: '18:00', duration_min: 120, done: true }]
+    expect(copyWeek(alt, '2026-11-02', '2026-11-09')).toEqual([
+      { module: 'MAK', day: '2026-11-10', start_time: '18:00', duration_min: 120, done: false },
+    ])
+    expect(hoursPerModule([...alt, { ...alt[0], id: 2 }])).toEqual([{ module: 'MAK', hours: 4 }])
   })
 })

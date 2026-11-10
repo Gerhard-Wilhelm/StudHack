@@ -33,8 +33,9 @@ flowchart LR
 | Karten-Importer | `importer/import_notes.py` | Karteikarten (`Frage::Antwort`) und Verständnisfragen (fette Frage plus `> [!question]-` Callout) nach `items` (Status freigegeben) und `card_states`. Erkennt Karten am Hash von Modul, Typ und Frage |
 | Lesemodus-Importer | `importer/import_lesemodus.py` | Wochennotizen ohne Karteikarten-Abschnitt nach `notes`, Modulübersichten ohne Wochen und Offene Fragen nach `modules` (mit Klausurtermin aus `config.yaml`), eingebettete Folienbilder als JPEG (max. 1400 px) in den privaten Bucket `folien` |
 | Generator | `generator/generate_mc.py` | Auswahlfragen mit Claude Sonnet 5.5, zweiter Aufruf prüft jede Frage gegen Notiz und Folientext, legt Bestandenes als Entwurf an. Gestreamt, mit Wiederholung bei Verbindungsabbruch |
-| Wochenbefehl | `wochenlauf.py` | Vorschau (nur lesend), dann Karten-Importer, Lesemodus-Importer, Generator |
-| App | `app/` | Vite, React, TypeScript. Login, Startseite mit Klausur-Countdown, Wochenliste, Lesemodus, Lernen mit FSRS (ts-fsrs), Auswahlfragen, Freigabe-Liste, Demo-Modus. Details in `app/README.md` |
+| Wochenbefehl | `wochenlauf.py` | Vorschau (nur lesend), dann Karten-Importer, Lesemodus-Importer, Generator, Kalender |
+| Kalender | `kalender.py` | Liest die Lernblöcke aus `study_blocks` (nur lesend) und schreibt `<Vault>/02 Lernplan/Kalender.md`, läuft beim täglichen Scan und bei `wochenlauf` |
+| App | `app/` | Vite, React, TypeScript. Login, Startseite mit Klausur-Countdown, Lernplan mit verschiebbaren Blöcken, Wochenliste, Lesemodus, Lernen mit FSRS (ts-fsrs), Auswahlfragen, Freigabe-Liste, Demo-Modus. Details in `app/README.md` |
 
 Importer und Generator schreiben nur mit `--schreiben`, ohne die Option ist es ein
 Trockenlauf (der Generator ruft mit `--notiz` oder `--modul` trotzdem die API auf).
@@ -48,6 +49,7 @@ Trockenlauf (der Generator ruft mit `--notiz` oder `--modul` trotzdem die API au
 | `reviews` | jede Bewertung | App | |
 | `notes` | Wochennotizen als Markdown | Lesemodus-Importer | App |
 | `modules` | Modulübersicht, voller Name, Klausurtermin | Lesemodus-Importer | App |
+| `study_blocks` | Lernplan: 2-Stunden-Blöcke mit Modul, Tag, Uhrzeit, erledigt | App | App, Kalender |
 | Bucket `folien` | Folienbilder, privat, `<user_id>/<Kürzel>/<Bild>.jpg` | Lesemodus-Importer | App (zeitlich begrenzte Links) |
 
 Alle Tabellen haben Row Level Security: Jeder angemeldete Nutzer sieht nur
@@ -61,6 +63,7 @@ Migrationen in `supabase/migrations/`, in dieser Reihenfolge im SQL Editor ausf�
 3. `20261108120000_module.sql`: modules
 4. `20261109120000_auswahlfragen.sql`: Typ multiple_choice
 5. `20261110120000_klausurtermine.sql`: Spalte exam_date in modules
+6. `20261111120000_lernplan.sql`: study_blocks
 
 ## Einrichtung von null
 
@@ -114,7 +117,7 @@ Alle Befehle der Importer und des Generators stehen in ihren Kopfkommentaren.
 ## Tests
 
 ```bash
-.venv/bin/python -m unittest importer.test_import_lesemodus generator.test_generate_mc scanner.test_auto test_wochenlauf
+.venv/bin/python -m unittest importer.test_import_lesemodus generator.test_generate_mc scanner.test_auto test_wochenlauf test_kalender
 cd app && npm test && npm run build
 ```
 

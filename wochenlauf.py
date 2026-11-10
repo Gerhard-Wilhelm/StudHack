@@ -4,6 +4,7 @@ Erst eine Vorschau (liest nur, kostet nichts), dann nach Rückfrage der Reihe na
   1. importer.import_notes --schreiben       Karteikarten und Verständnisfragen
   2. importer.import_lesemodus --schreiben   Notizen, Modulinfos, Folienbilder
   3. generator.generate_mc --schreiben       Auswahlfragen als Entwürfe (Claude API)
+  4. kalender                                Lernplan aus der App nach 02 Lernplan/Kalender.md
 
 Aufruf (im Ordner Lernassistent):
   .venv/bin/python -m wochenlauf                 # Vorschau, dann Rückfrage
@@ -112,6 +113,8 @@ def main() -> int:
         print(f"\n=== {name} ===", flush=True)
         code = subprocess.run([sys.executable, "-m", modul, "--schreiben"], cwd=PROJECT_DIR).returncode
         ergebnis.append((name, code))
+    print("\n=== Kalender ===", flush=True)
+    ergebnis.append(("Kalender", subprocess.run([sys.executable, "-m", "kalender"], cwd=PROJECT_DIR).returncode))
 
     print("\nZusammenfassung:")
     for name, code in ergebnis:

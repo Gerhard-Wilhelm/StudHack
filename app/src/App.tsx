@@ -4,6 +4,7 @@ import { DemoStore } from './lib/store-demo'
 import { SupabaseStore } from './lib/store-supabase'
 import { supabase } from './lib/supabase'
 import { allocateNew, getReactivated, isWritten, setReactivated, urgency } from './lib/exams'
+import { addMinutes, isoDate, moduleColors, sortBlocks, type StudyBlock } from './lib/plan'
 import { buildQueue, newPerModule, overview, weekCounts } from './lib/queue'
 import { countIntroduced, remainingNew } from './lib/settings'
 import type { Item, ModuleInfo, NoteSummary, ReviewRecord, StudyCard } from './lib/types'
@@ -12,6 +13,7 @@ import { Home } from './views/Home'
 import { Login } from './views/Login'
 import { ModuleInfoView } from './views/ModuleInfo'
 import { ModuleView, type WeekRow } from './views/ModuleView'
+import { Plan, type PlanModule } from './views/Plan'
 import { Settings } from './views/Settings'
 import { Study } from './views/Study'
 import { WeekView } from './views/WeekView'
@@ -20,6 +22,7 @@ type View =
   | { name: 'home' }
   | { name: 'settings' }
   | { name: 'drafts' }
+  | { name: 'plan' }
   | { name: 'module'; module: string }
   | { name: 'info'; module: string }
   | { name: 'week'; module: string; week: number | null }
@@ -53,6 +56,7 @@ export function App() {
   const [modules, setModules] = useState<ModuleInfo[]>([])
   const [drafts, setDrafts] = useState<Item[]>([])
   const [reactivated, setReactivatedState] = useState<string[]>(getReactivated)
+  const [todayBlocks, setTodayBlocks] = useState<StudyBlock[]>([])
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<View>({ name: 'home' })
   const [pending, setPending] = useState(0)
@@ -83,6 +87,13 @@ export function App() {
       setNotesError(null)
     } catch (e) {
       setNotesError(e instanceof Error ? e.message : String(e))
+    }
+    try {
+      const heute = isoDate(new Date())
+      setTodayBlocks(sortBlocks(await store.loadBlocks(heute, heute)))
+    } catch {
+      // ohne Tabelle study_blocks (Migration fehlt) gibt es einfach keinen Plan
+      setTodayBlocks([])
     }
     try {
       setDrafts(await store.loadDrafts())
@@ -159,6 +170,15 @@ export function App() {
   }, [activeCards, notes, modules, paused, exams, now, newLimit, quota])
 
   const moduleNames = useMemo(() => Object.fromEntries(modules.map((m) => [m.module, m.name])), [modules])
+
+  // Module für den Lernplan, nach Klausurtermin sortiert (ohne Termin ans Ende)
+  const planModules: PlanModule[] = useMemo(() => {
+    const kuerzel = new Set([...modules.map((m) => m.module), ...(cards ?? []).map((c) => c.item.module)])
+    return [...kuerzel]
+      .map((m) => ({ module: m, name: moduleNames[m], exam: exams[m] ?? null }))
+      .sort((a, b) => (a.exam ?? '9999').localeCompare(b.exam ?? '9999') || a.module.localeCompare(b.module, 'de'))
+  }, [modules, cards, moduleNames, exams])
+  const colors = useMemo(() => moduleColors(planModules.map((m) => m.module)), [planModules])
 
   function weekRows(module: string): WeekRow[] {
     const counts = cards ? weekCounts(cards, module, now, newLimit) : new Map()
@@ -264,6 +284,20 @@ export function App() {
         onBack={() => setView({ name: 'home' })}
       />
     )
+  } else if (view.name === 'plan') {
+    body = (
+      <Plan
+        store={store}
+        modules={planModules.filter((m) => !paused.has(m.module))}
+        colors={colors}
+        now={now}
+        onStudy={(module) => startStudy({ module }, { name: 'plan' })}
+        onBack={() => {
+          setView({ name: 'home' })
+          void load()
+        }}
+      />
+    )
   } else if (view.name === 'drafts') {
     body = (
       <Drafts
@@ -312,6 +346,9 @@ export function App() {
         pending={pending}
         drafts={drafts.length}
         onOpenDrafts={() => setView({ name: 'drafts' })}
+        today={todayBlocks.map((b) => ({ ...b, end: addMinutes(b.start_time, b.duration_min), color: colors[b.module] }))}
+        onOpenPlan={() => setView({ name: 'plan' })}
+        onStudyModule={(module) => startStudy({ module }, { name: 'home' })}
         onStudy={() => startStudy({}, { name: 'home' })}
         onOpenModule={(module) => setView({ name: 'module', module })}
         onSettings={() => setView({ name: 'settings' })}

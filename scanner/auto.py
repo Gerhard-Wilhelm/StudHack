@@ -3,6 +3,7 @@
 Ohne Neues bleibt es still. Die Ausgabe jedes Laufs landet in logs/scan.log.
 Ist beim Start noch kein Netz da (typisch direkt nach dem Aufwachen des Macs), wartet
 der Scan und versucht es nach 2, 5 und 10 Minuten erneut.
+Danach wird die Vault-Notiz 02 Lernplan/Kalender.md aus dem Lernplan der App erneuert.
 Einrichten: scripts/scan_einrichten.sh, von Hand testen: .venv/bin/python -m scanner.auto
 """
 
@@ -90,7 +91,18 @@ def main() -> int:
         nicht_ladbar = [f for f in found if f["status"].startswith("nicht ladbar")]
         if nicht_ladbar:
             log(f"{len(nicht_ladbar)} Dateien nicht ladbar, siehe Bericht")
+        kalender_aktualisieren(log)
         return 0
+
+
+def kalender_aktualisieren(log) -> None:
+    """Kalender-Notiz im Vault erneuern. Fehler hier sollen den Scan nicht als gescheitert melden."""
+    try:
+        from kalender import schreiben
+
+        log(f"Kalender aktualisiert: {schreiben()}")
+    except (Exception, SystemExit) as e:  # Supabase meldet Fehler per sys.exit
+        log(f"Kalender nicht aktualisiert: {e}")
 
 
 if __name__ == "__main__":

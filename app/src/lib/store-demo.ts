@@ -1,11 +1,13 @@
 import { DEMO_DRAFTS, DEMO_ITEMS } from './demo-cards'
 import { DEMO_MODULES, DEMO_NOTES } from './demo-notes'
 import { resetIntroduced } from './settings'
+import { sortBlocks, type NewBlock, type StudyBlock } from './plan'
 import type { Store } from './store'
 import type { CardStateFields, Item, ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
 const KEY = 'studhack.demo'
 const DRAFTS_KEY = 'studhack.demoDrafts'
+const BLOCKS_KEY = 'studhack.demoBlocks'
 
 function emptyState(): CardStateFields {
   return {
@@ -77,6 +79,37 @@ export class DemoStore implements Store {
     return note
   }
 
+  private blocks(): StudyBlock[] {
+    try {
+      return JSON.parse(localStorage.getItem(BLOCKS_KEY) ?? '[]') as StudyBlock[]
+    } catch {
+      return []
+    }
+  }
+
+  private writeBlocks(blocks: StudyBlock[]) {
+    try {
+      localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
+    } catch {
+      // Demo läuft dann nur bis zum Neuladen
+    }
+  }
+
+  async loadBlocks(from: string, to: string): Promise<StudyBlock[]> {
+    return sortBlocks(this.blocks().filter((b) => b.day >= from && b.day <= to))
+  }
+
+  async saveBlock(block: NewBlock): Promise<StudyBlock> {
+    const all = this.blocks()
+    const saved: StudyBlock = { ...block, id: block.id ?? Math.max(0, ...all.map((b) => b.id)) + 1 }
+    this.writeBlocks([...all.filter((b) => b.id !== saved.id), saved])
+    return saved
+  }
+
+  async deleteBlock(id: number): Promise<void> {
+    this.writeBlocks(this.blocks().filter((b) => b.id !== id))
+  }
+
   async loadModules(): Promise<ModuleInfo[]> {
     // Kopien wie bei Supabase, sonst erkennt React Änderungen nicht
     return DEMO_MODULES.map((m) => ({ ...m }))
@@ -91,6 +124,7 @@ export class DemoStore implements Store {
     resetIntroduced('demo')
     try {
       localStorage.removeItem(DRAFTS_KEY)
+      localStorage.removeItem(BLOCKS_KEY)
       localStorage.removeItem(KEY)
     } catch {
       // nichts zu tun

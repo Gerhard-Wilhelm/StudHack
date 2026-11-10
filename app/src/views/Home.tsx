@@ -1,4 +1,6 @@
+import type { CSSProperties } from 'react'
 import { formatExam } from '../lib/exams'
+import type { StudyBlock } from '../lib/plan'
 import type { Overview } from '../lib/queue'
 
 function plural(n: number, one: string, many: string) {
@@ -13,6 +15,9 @@ export function Home(props: {
   pending: number
   drafts: number
   onOpenDrafts: () => void
+  today: (StudyBlock & { end: string; color?: string })[]
+  onOpenPlan: () => void
+  onStudyModule: (module: string) => void
   onStudy: () => void
   onOpenModule: (module: string) => void
   onSettings: () => void
@@ -24,7 +29,10 @@ export function Home(props: {
     <main className="page home">
       <header className="bar">
         <h1 className="title">Heute</h1>
-        <button className="link" onClick={props.onSettings}>Einstellungen</button>
+        <span className="bar-links">
+          <button className="link" onClick={props.onOpenPlan}>Plan</button>
+          <button className="link" onClick={props.onSettings}>Einstellungen</button>
+        </span>
       </header>
 
       <p className="summary">
@@ -32,6 +40,22 @@ export function Home(props: {
           ? 'Für heute ist alles erledigt.'
           : `${plural(total.due, 'Wiederholung', 'Wiederholungen')} und ${plural(total.fresh, 'neue Karte', 'neue Karten')}.`}
       </p>
+
+      {props.today.filter((b) => !b.done).length > 0 && (
+        <div className="today">
+          {props.today.filter((b) => !b.done).map((b) => (
+            <button
+              key={b.id}
+              className="today-block"
+              style={{ '--m': b.color ?? 'var(--ink)' } as CSSProperties}
+              onClick={() => props.onStudyModule(b.module)}
+            >
+              <span>Heute: <strong>{b.module}</strong> {b.start_time} bis {b.end}</span>
+              <span className="info-hint">Jetzt lernen</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {props.drafts > 0 && (
         <button className="info-row drafts-row" onClick={props.onOpenDrafts}>

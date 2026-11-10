@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { hhmm, type NewBlock, type StudyBlock } from './plan'
 import type { Store } from './store'
 import type { CardStateFields, Item, ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
@@ -111,6 +112,34 @@ export class SupabaseStore implements Store {
   async decideDrafts(ids: number[], status: 'freigegeben' | 'verworfen'): Promise<void> {
     if (ids.length === 0) return
     const { error } = await this.sb.from('items').update({ status }).in('id', ids).eq('status', 'entwurf')
+    if (error) throw error
+  }
+
+  async loadBlocks(from: string, to: string): Promise<StudyBlock[]> {
+    const { data, error } = await this.sb
+      .from('study_blocks')
+      .select('id,module,day,start_time,duration_min,done')
+      .gte('day', from)
+      .lte('day', to)
+      .order('day')
+      .order('start_time')
+    if (error) throw error
+    return (data as StudyBlock[]).map((b) => ({ ...b, start_time: hhmm(b.start_time) }))
+  }
+
+  async saveBlock(block: NewBlock): Promise<StudyBlock> {
+    const { id, ...fields } = block
+    const query = id
+      ? this.sb.from('study_blocks').update(fields).eq('id', id)
+      : this.sb.from('study_blocks').insert(fields)
+    const { data, error } = await query.select('id,module,day,start_time,duration_min,done').single()
+    if (error) throw error
+    const b = data as StudyBlock
+    return { ...b, start_time: hhmm(b.start_time) }
+  }
+
+  async deleteBlock(id: number): Promise<void> {
+    const { error } = await this.sb.from('study_blocks').delete().eq('id', id)
     if (error) throw error
   }
 
