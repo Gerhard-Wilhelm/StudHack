@@ -155,7 +155,10 @@ Deno.serve(async (req) => {
     const push = e as { statusCode?: number; body?: string }
     const fehler = push.statusCode
       ? `Push-Dienst lehnt ab (${push.statusCode}): ${push.body ?? ''}`.trim()
-      : e instanceof Error ? e.message : String(e)
+      : e instanceof Error ? e.message
+      // Datenbankfehler kommen als einfaches Objekt mit message
+      : typeof e === 'object' && e && 'message' in e ? String(e.message)
+      : String(e)
     return antwort({ fehler }, 500)
   }
 })

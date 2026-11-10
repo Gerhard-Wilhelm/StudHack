@@ -70,6 +70,7 @@ Migrationen in `supabase/migrations/`, in dieser Reihenfolge im SQL Editor ausf√
 5. `20261110120000_klausurtermine.sql`: Spalte exam_date in modules
 6. `20261111120000_lernplan.sql`: study_blocks
 7. `20261112120000_mitteilungen.sql`: push_subscriptions, push_sent
+8. `20261113120000_mitteilungen_rechte.sql`: Leserechte der Edge Function erinnerungen
 
 ## Einrichtung von null
 
