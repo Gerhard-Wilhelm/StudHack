@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PushSettings } from '../components/PushSettings'
 import { DEFAULT_NEW_LIMIT, getNewLimit, introducedToday, setNewLimit } from '../lib/settings'
 
 export function Settings(props: {
@@ -37,6 +38,8 @@ export function Settings(props: {
           Gezählt wird auf diesem Gerät.
         </p>
       </section>
+
+      {!props.demo && <PushSettings />}
 
       {props.written.length > 0 && (
         <section className="setting">

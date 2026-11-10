@@ -35,6 +35,7 @@ flowchart LR
 | Generator | `generator/generate_mc.py` | Auswahlfragen mit Claude Sonnet 5.5, zweiter Aufruf prüft jede Frage gegen Notiz und Folientext, legt Bestandenes als Entwurf an. Gestreamt, mit Wiederholung bei Verbindungsabbruch |
 | Wochenbefehl | `wochenlauf.py` | Vorschau (nur lesend), dann Karten-Importer, Lesemodus-Importer, Generator, Kalender |
 | Kalender | `kalender.py` | Liest die Lernblöcke aus `study_blocks` (nur lesend) und schreibt `<Vault>/02 Lernplan/Kalender.md`, läuft beim täglichen Scan und bei `wochenlauf` |
+| Mitteilungen | `supabase/functions/erinnerungen/` | Edge Function, alle 5 Minuten per pg_cron: Web-Push an die angemeldeten Geräte (Blockbeginn, Morgenüberblick, offene Wiederholungen, Wochenplan fehlt, neue Entwürfe), Ruhezeit 22 bis 7 Uhr, keine Doppelmeldungen |
 | App | `app/` | Vite, React, TypeScript. Login, Startseite mit Klausur-Countdown, Lernplan mit verschiebbaren Blöcken, Wochenliste, Lesemodus, Lernen mit FSRS (ts-fsrs), Auswahlfragen, Freigabe-Liste, Demo-Modus. Details in `app/README.md` |
 
 Importer und Generator schreiben nur mit `--schreiben`, ohne die Option ist es ein
@@ -50,11 +51,15 @@ Trockenlauf (der Generator ruft mit `--notiz` oder `--modul` trotzdem die API au
 | `notes` | Wochennotizen als Markdown | Lesemodus-Importer | App |
 | `modules` | Modulübersicht, voller Name, Klausurtermin | Lesemodus-Importer | App |
 | `study_blocks` | Lernplan: 2-Stunden-Blöcke mit Modul, Tag, Uhrzeit, erledigt | App | App, Kalender |
+| `push_subscriptions` | Geräte für Mitteilungen mit Schaltern je Art | App | Edge Function |
+| `push_sent` | verschickte Mitteilungen gegen Doppelte | Edge Function | |
 | Bucket `folien` | Folienbilder, privat, `<user_id>/<Kürzel>/<Bild>.jpg` | Lesemodus-Importer | App (zeitlich begrenzte Links) |
 
 Alle Tabellen haben Row Level Security: Jeder angemeldete Nutzer sieht nur
 eigene Zeilen. Importer und Generator melden sich als Gerhard an (`STUDHACK_EMAIL`,
-`STUDHACK_PASSWORD`), es gibt keinen service_role-Schlüssel im Einsatz.
+`STUDHACK_PASSWORD`), auf dem Mac gibt es keinen service_role-Schlüssel. Nur die
+Edge Function erinnerungen nutzt den Service-Schlüssel, den Supabase ihr selbst
+bereitstellt.
 
 Migrationen in `supabase/migrations/`, in dieser Reihenfolge im SQL Editor ausführen:
 
@@ -64,6 +69,7 @@ Migrationen in `supabase/migrations/`, in dieser Reihenfolge im SQL Editor ausf�
 4. `20261109120000_auswahlfragen.sql`: Typ multiple_choice
 5. `20261110120000_klausurtermine.sql`: Spalte exam_date in modules
 6. `20261111120000_lernplan.sql`: study_blocks
+7. `20261112120000_mitteilungen.sql`: push_subscriptions, push_sent
 
 ## Einrichtung von null
 
@@ -85,7 +91,8 @@ chmod 600 .env
    Output `dist`, Variablen `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`,
    `NODE_VERSION=22`. Jeder Merge nach `main` baut neu.
 5. Täglicher Scan: `scripts/scan_einrichten.sh`.
-6. Erste Daten: `.venv/bin/python -m wochenlauf`.
+6. Mitteilungen (optional): Schritte in der Anleitung im Vault, Abschnitt "Mitteilungen einrichten".
+7. Erste Daten: `.venv/bin/python -m wochenlauf`.
 
 ## Konfiguration (`config.yaml`)
 

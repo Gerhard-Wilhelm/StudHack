@@ -88,12 +88,21 @@ Tippen öffnet das Menü, lange drücken und ziehen verschiebt. Vorschlag nach
 Klausurnähe oder Vorwoche übernehmen. Gespeichert in `study_blocks` (Migration
 `20261111120000_lernplan.sql`), `kalender.py` schreibt den Plan in den Vault.
 
+## Mitteilungen
+
+Einstellungen, Abschnitt "Mitteilungen": Gerät anmelden, Schalter je Art,
+Testmitteilung. `public/sw.js` zeigt die Mitteilungen, ein Tipp öffnet die App
+über Links wie `?lernen=BIL`, `?lernen=alle`, `?ansicht=plan&woche=naechste`,
+`?ansicht=entwuerfe`. Verschickt werden sie von der Edge Function
+`supabase/functions/erinnerungen`. Braucht `VITE_VAPID_PUBLIC_KEY` (öffentlicher
+Push-Schlüssel). Auf dem iPhone nur, wenn die App vom Home-Bildschirm läuft.
+
 ## Cloudflare Pages
 
 - Root directory: `app`
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Umgebungsvariablen: `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`
+- Umgebungsvariablen: `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`, `VITE_VAPID_PUBLIC_KEY`
 
 ## Auf dem iPhone installieren
 
