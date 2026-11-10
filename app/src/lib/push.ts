@@ -112,7 +112,11 @@ export async function speicherePrefs(prefs: Prefs): Promise<void> {
 export async function testmitteilung(): Promise<number> {
   if (!supabase) throw new Error('Nur mit Supabase.')
   const { data, error } = await supabase.functions.invoke<{ geraete?: number; fehler?: string }>('erinnerungen', { body: { test: true } })
-  if (error) throw error
+  if (error) {
+    // Bei Status 500 steht der Grund im Text der Antwort, nicht in error.message
+    const antwort = await (error as { context?: Response }).context?.json().catch(() => null)
+    throw new Error(antwort?.fehler ?? error.message)
+  }
   if (data?.fehler) throw new Error(data.fehler)
   return data?.geraete ?? 0
 }
