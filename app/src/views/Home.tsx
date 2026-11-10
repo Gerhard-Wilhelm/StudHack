@@ -92,7 +92,7 @@ export function Home(props: {
                   </span>
                   <span className="module-counts">
                     <span className="count due" aria-label={`${m.due} fällig`}>{m.due}</span>
-                    <span className="count fresh" aria-label={`${m.fresh} neu`}>{m.fresh}</span>
+                    <span className="count fresh" aria-label={`${m.fresh} ungelernt`}>{m.fresh}</span>
                   </span>
                 </button>
               </li>
@@ -102,7 +102,7 @@ export function Home(props: {
       )}
       {modules.length > 0 && (
         <p className="legend">
-          <span className="count due">fällig</span> <span className="count fresh">neu</span>
+          <span className="count due">fällig</span> <span className="count fresh">ungelernt</span>
         </p>
       )}
 

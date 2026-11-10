@@ -77,8 +77,8 @@ Lernstapel, die Antworten werden bei jeder Abfrage neu gemischt.
 Der gewählte Termin je Modul steht in `config.yaml` unter `pruefung` und kommt
 mit `importer.import_lesemodus --schreiben` in die Tabelle `modules` (vorher
 einmal `supabase/migrations/20261110120000_klausurtermine.sql` ausführen).
-Die App zeigt dann den Countdown, verteilt das Tageslimit neuer Karten nach
-Klausurnähe und fragt ein Modul nach seiner Klausur nicht mehr ab. In den
+Die App zeigt dann den Countdown, gibt das Tageslimit neuer Karten an die
+Module mit Lernblock heute (ohne Block nach Klausurnähe verteilt) und fragt ein Modul nach seiner Klausur nicht mehr ab. In den
 Einstellungen lässt es sich für eine Wiederholungsprüfung wieder einschalten.
 
 ## Lernplan

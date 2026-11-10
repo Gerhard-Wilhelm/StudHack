@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { correctSet, evaluate, isChoice, shuffledOrder } from './choice'
-import { allocateNew, daysUntil, formatDate, formatExam, isWritten, urgency } from './exams'
+import { allocateNew, dailyQuota, daysUntil, formatDate, formatExam, isWritten, urgency } from './exams'
 import { formatInterval, fromCard, rate, toCard } from './fsrs'
 import { addMinutes, copyWeek, formatDay, hoursPerModule, isoWeek, suggestWeek, timeSlots, weekStart } from './plan'
 import { advance, buildQueue, overview, weekCounts } from './queue'
@@ -52,16 +52,16 @@ describe('Warteschlange', () => {
   it('filtert nach Woche und zählt je Woche', () => {
     expect(buildQueue(cards, { now, newLimit: 10, module: 'A', week: 3 }).map((c) => c.item.id)).toEqual([1])
     expect(buildQueue(cards, { now, newLimit: 10, module: 'A', week: null }).map((c) => c.item.id)).toEqual([6])
-    const wc = weekCounts(cards, 'B', now, 10)
+    const wc = weekCounts(cards, 'B', now)
     expect(wc.get(1)).toEqual({ due: 1, fresh: 0 })
     expect(wc.get(2)).toEqual({ due: 1, fresh: 0 })
   })
 
-  it('zählt gesamt und pro Modul', () => {
-    const ov = overview(cards, now, 2)
-    expect(ov.total).toEqual({ due: 2, fresh: 2 })
+  it('zählt gesamt nach Limit und pro Modul alle ungelernten', () => {
+    const ov = overview(cards, now, 1)
+    expect(ov.total).toEqual({ due: 2, fresh: 1 })
     expect(ov.modules).toEqual([
-      { module: 'A', due: 0, fresh: 2 },
+      { module: 'A', due: 0, fresh: 3 },
       { module: 'B', due: 2, fresh: 0 },
     ])
   })
@@ -208,6 +208,27 @@ describe('Klausurtermine', () => {
     const q = buildQueue(cs, { now, newLimit: 20, newQuota: { A: 1, B: 2 } })
     expect(q.map((c) => c.item.id).sort()).toEqual([1, 4, 5])
     expect(overview(cs, now, 20, { A: 1, B: 2 }).total.fresh).toBe(3)
+  })
+
+  it('gibt neue Karten an die Module mit Block heute', () => {
+    const available = { BIL: 100, IuF: 100, MAK: 100 }
+    const exams = { BIL: '2026-11-30', IuF: '2027-03-15', MAK: '2027-02-19' }
+    expect(dailyQuota(available, exams, [{ module: 'IuF', duration_min: 120 }], 20, heute)).toEqual({ BIL: 0, IuF: 20, MAK: 0 })
+    const zwei = dailyQuota(available, exams, [
+      { module: 'IuF', duration_min: 120 },
+      { module: 'MAK', duration_min: 120 },
+      { module: 'MAK', duration_min: 120 },
+    ], 21, heute)
+    expect(zwei).toEqual({ BIL: 0, IuF: 7, MAK: 14 })
+  })
+
+  it('verteilt ohne Block nach Klausurnähe', () => {
+    const available = { BIL: 100, IuF: 100 }
+    const exams = { BIL: '2026-11-30', IuF: '2027-03-15' }
+    const ohne = dailyQuota(available, exams, [], 20, heute)
+    expect(ohne.BIL).toBeGreaterThan(ohne.IuF)
+    // Block-Modul ohne neue Karten zählt nicht, dann wieder nach Klausurnähe
+    expect(dailyQuota({ ...available, MAK: 0 }, exams, [{ module: 'MAK', duration_min: 120 }], 20, heute)).toEqual({ ...ohne, MAK: 0 })
   })
 })
 

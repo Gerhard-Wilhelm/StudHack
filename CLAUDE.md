@@ -58,7 +58,7 @@ Bestehend:
 - `app/`: PWA (Vite, React, TypeScript). Login, Startseite, Wochenliste je Modul,
   Modulinfo, Wochenansicht mit Notiz, Folienbildern und Mermaid, Lernen mit FSRS
   inklusive Auswahlfragen, Freigabe-Liste für Entwürfe, Klausur-Countdown,
-  neue Karten nach Klausurnähe verteilt, Module nach der Klausur pausiert,
+  neue Karten an die Module mit Lernblock heute (sonst nach Klausurnähe), Module nach der Klausur pausiert,
   Demo-Modus. Schlüssel in `app/.env.local`, Details in `app/README.md`
 
 Geplant:

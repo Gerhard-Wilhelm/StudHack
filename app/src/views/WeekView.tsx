@@ -9,6 +9,8 @@ export function WeekView(props: {
   week: number | null
   summary?: NoteSummary
   counts: Counts
+  /** Restkontingent neuer Karten heute */
+  newLimit: number
   store: Store
   onStudy: () => void
   onBack: () => void
@@ -16,7 +18,7 @@ export function WeekView(props: {
   const { store, summary } = props
   const [note, setNote] = useState<Note | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const cards = props.counts.due + props.counts.fresh
+  const cards = props.counts.due + Math.min(props.counts.fresh, props.newLimit)
 
   useEffect(() => {
     setNote(null)
