@@ -60,8 +60,8 @@ export function newPerModule(cards: StudyCard[]): Record<string, number> {
 }
 
 /**
- * Zahlen für die Startseite. Neue Karten sind auf das Restkontingent gedeckelt,
- * mit quota zusätzlich auf den Anteil jedes Moduls.
+ * Zahlen für die Startseite. Pro Modul zählt fresh alle noch ungelernten Karten,
+ * gesamt nur die neuen, die "Lernen" heute bringt (Restkontingent, mit quota nach Anteil jedes Moduls).
  */
 export function overview(cards: StudyCard[], now: Date, newLimit: number, quota?: Record<string, number>): Overview {
   const map = new Map<string, Counts>()
@@ -72,20 +72,15 @@ export function overview(cards: StudyCard[], now: Date, newLimit: number, quota?
     map.set(c.item.module, m)
   }
   const modules = [...map.entries()]
-    .map(([module, m]) => ({ module, due: m.due, fresh: Math.min(m.fresh, newLimit, quota?.[module] ?? Infinity) }))
+    .map(([module, m]) => ({ module, due: m.due, fresh: m.fresh }))
     .sort((a, b) => a.module.localeCompare(b.module, 'de'))
   const due = modules.reduce((s, m) => s + m.due, 0)
-  const allNew = quota ? modules.reduce((s, m) => s + m.fresh, 0) : [...map.values()].reduce((s, m) => s + m.fresh, 0)
+  const allNew = modules.reduce((s, m) => s + Math.min(m.fresh, quota?.[m.module] ?? Infinity), 0)
   return { total: { due, fresh: Math.min(allNew, newLimit) }, modules }
 }
 
-/** Fällige und neue Karten je Woche eines Moduls. Neue sind auf das Restkontingent gedeckelt. */
-export function weekCounts(
-  cards: StudyCard[],
-  module: string,
-  now: Date,
-  newLimit: number,
-): Map<number | null, Counts> {
+/** Fällige und ungelernte Karten je Woche eines Moduls. */
+export function weekCounts(cards: StudyCard[], module: string, now: Date): Map<number | null, Counts> {
   const map = new Map<number | null, Counts>()
   for (const c of cards) {
     if (c.item.module !== module) continue
@@ -94,7 +89,6 @@ export function weekCounts(
     else if (isNew(c)) w.fresh++
     map.set(c.item.week, w)
   }
-  for (const w of map.values()) w.fresh = Math.min(w.fresh, newLimit)
   return map
 }
 

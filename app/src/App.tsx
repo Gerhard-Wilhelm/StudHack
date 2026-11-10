@@ -3,7 +3,7 @@ import type { Store } from './lib/store'
 import { DemoStore } from './lib/store-demo'
 import { SupabaseStore } from './lib/store-supabase'
 import { supabase } from './lib/supabase'
-import { allocateNew, getReactivated, isWritten, setReactivated, urgency } from './lib/exams'
+import { dailyQuota, getReactivated, isWritten, setReactivated } from './lib/exams'
 import { addMinutes, isoDate, moduleColors, sortBlocks, type StudyBlock } from './lib/plan'
 import { buildQueue, newPerModule, overview, weekCounts } from './lib/queue'
 import { countIntroduced, remainingNew } from './lib/settings'
@@ -135,7 +135,7 @@ export function App() {
   const now = useMemo(() => new Date(), [cards, view, tick])
   const newLimit = store ? remainingNew(store.kind, now) : 0
 
-  // Klausurtermine: Module nach ihrer Klausur pausieren, neue Karten nach Klausurnähe verteilen
+  // Klausurtermine: Module nach ihrer Klausur pausieren. Neue Karten an die Module mit Block heute, sonst nach Klausurnähe
   const exams = useMemo(
     () => Object.fromEntries(modules.filter((m) => m.exam_date).map((m) => [m.module, m.exam_date!])),
     [modules],
@@ -148,10 +148,8 @@ export function App() {
   const activeCards = useMemo(() => cards?.filter((c) => !paused.has(c.item.module)) ?? null, [cards, paused])
   const quota = useMemo(() => {
     if (!activeCards) return {}
-    const available = newPerModule(activeCards)
-    const weights = Object.fromEntries(Object.keys(available).map((m) => [m, urgency(exams[m], now)]))
-    return allocateNew(available, weights, newLimit)
-  }, [activeCards, exams, now, newLimit])
+    return dailyQuota(newPerModule(activeCards), exams, todayBlocks, newLimit, now)
+  }, [activeCards, exams, todayBlocks, now, newLimit])
 
   const ov = useMemo(() => {
     if (!activeCards) return null
@@ -181,7 +179,7 @@ export function App() {
   const colors = useMemo(() => moduleColors(planModules.map((m) => m.module)), [planModules])
 
   function weekRows(module: string): WeekRow[] {
-    const counts = cards ? weekCounts(cards, module, now, newLimit) : new Map()
+    const counts = cards ? weekCounts(cards, module, now) : new Map()
     const byWeek = new Map(notes.filter((n) => n.module === module).map((n) => [n.week, n]))
     const weeks = [...new Set([...counts.keys(), ...byWeek.keys()])].sort(
       (a, b) => (a ?? 99) - (b ?? 99),
@@ -277,6 +275,7 @@ export function App() {
         info={modules.find((m) => m.module === view.module)}
         now={now}
         weeks={weekRows(view.module)}
+        newLimit={newLimit}
         notesError={notesError}
         onOpenWeek={(week) => setView({ name: 'week', module: view.module, week })}
         onOpenInfo={() => setView({ name: 'info', module: view.module })}
@@ -331,6 +330,7 @@ export function App() {
         week={view.week}
         summary={row?.note}
         counts={row?.counts ?? { due: 0, fresh: 0 }}
+        newLimit={newLimit}
         store={store}
         onStudy={() => startStudy({ module: view.module, week: view.week }, view)}
         onBack={() => setView({ name: 'module', module: view.module })}

@@ -88,3 +88,25 @@ export function allocateNew(
   }
   return quota
 }
+
+/**
+ * Quote neuer Karten für heute. Sind heute Lernblöcke geplant, bekommen nur deren Module neue Karten,
+ * aufgeteilt nach geplanten Minuten. Ohne Block, oder wenn die Block-Module nichts Neues mehr haben,
+ * gilt die Verteilung nach Klausurnähe.
+ */
+export function dailyQuota(
+  available: Record<string, number>,
+  exams: Record<string, string | null | undefined>,
+  blocks: { module: string; duration_min: number }[],
+  limit: number,
+  now: Date,
+): Record<string, number> {
+  const minuten: Record<string, number> = {}
+  for (const b of blocks) if (available[b.module]) minuten[b.module] = (minuten[b.module] ?? 0) + b.duration_min
+  if (Object.keys(minuten).length) {
+    const verfuegbar = Object.fromEntries(Object.keys(minuten).map((m) => [m, available[m]]))
+    return { ...Object.fromEntries(Object.keys(available).map((m) => [m, 0])), ...allocateNew(verfuegbar, minuten, limit) }
+  }
+  const weights = Object.fromEntries(Object.keys(available).map((m) => [m, urgency(exams[m], now)]))
+  return allocateNew(available, weights, limit)
+}

@@ -13,13 +13,17 @@ export function ModuleView(props: {
   info?: ModuleInfo
   now: Date
   weeks: WeekRow[]
+  /** Restkontingent neuer Karten heute */
+  newLimit: number
   notesError: string | null
   onOpenWeek: (week: number | null) => void
   onOpenInfo: () => void
   onStudy: () => void
   onBack: () => void
 }) {
-  const total = props.weeks.reduce((s, w) => s + w.counts.due + w.counts.fresh, 0)
+  const due = props.weeks.reduce((s, w) => s + w.counts.due, 0)
+  const fresh = props.weeks.reduce((s, w) => s + w.counts.fresh, 0)
+  const total = due + Math.min(fresh, props.newLimit)
 
   return (
     <main className="page module-view">
@@ -57,7 +61,7 @@ export function ModuleView(props: {
                 </span>
                 <span className="module-counts">
                   <span className="count due" aria-label={`${w.counts.due} fällig`}>{w.counts.due}</span>
-                  <span className="count fresh" aria-label={`${w.counts.fresh} neu`}>{w.counts.fresh}</span>
+                  <span className="count fresh" aria-label={`${w.counts.fresh} ungelernt`}>{w.counts.fresh}</span>
                 </span>
               </button>
             </li>
@@ -65,7 +69,7 @@ export function ModuleView(props: {
         </ul>
       )}
       <p className="legend">
-        <span className="count due">fällig</span> <span className="count fresh">neu</span>
+        <span className="count due">fällig</span> <span className="count fresh">ungelernt</span>
       </p>
 
       <footer className="dock">
