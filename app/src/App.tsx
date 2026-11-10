@@ -4,7 +4,7 @@ import { DemoStore } from './lib/store-demo'
 import { SupabaseStore } from './lib/store-supabase'
 import { supabase } from './lib/supabase'
 import { dailyQuota, getReactivated, isWritten, setReactivated } from './lib/exams'
-import { addMinutes, isoDate, moduleColors, sortBlocks, type StudyBlock } from './lib/plan'
+import { addDays, addMinutes, isoDate, moduleColors, sortBlocks, weekStart, type StudyBlock } from './lib/plan'
 import { buildQueue, newPerModule, overview, weekCounts } from './lib/queue'
 import { countIntroduced, remainingNew } from './lib/settings'
 import type { Item, ModuleInfo, NoteSummary, ReviewRecord, StudyCard } from './lib/types'
@@ -22,7 +22,7 @@ type View =
   | { name: 'home' }
   | { name: 'settings' }
   | { name: 'drafts' }
-  | { name: 'plan' }
+  | { name: 'plan'; monday?: string }
   | { name: 'module'; module: string }
   | { name: 'info'; module: string }
   | { name: 'week'; module: string; week: number | null }
@@ -61,6 +61,9 @@ export function App() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [pending, setPending] = useState(0)
   const [tick, setTick] = useState(0)
+  const [loaded, setLoaded] = useState(0)
+  // Link aus einer Mitteilung: ?lernen=BIL, ?lernen=alle, ?ansicht=plan&woche=naechste, ?ansicht=entwuerfe
+  const [link, setLink] = useState(() => new URLSearchParams(window.location.search))
 
   // Supabase-Sitzung beobachten, solange die Demo nicht läuft
   useEffect(() => {
@@ -106,6 +109,7 @@ export function App() {
       // ohne Tabelle modules (Migration fehlt) zeigt die App einfach keine Modulinfos
       setModules([])
     }
+    setLoaded((n) => n + 1)
   }, [store])
 
   useEffect(() => {
@@ -207,6 +211,20 @@ export function App() {
     setView({ name: 'study', queue, back })
   }
 
+  useEffect(() => {
+    if (!loaded || !cards || ![...link.keys()].length) return
+    window.history.replaceState(null, '', window.location.pathname)
+    setLink(new URLSearchParams())
+    const lernen = link.get('lernen')
+    const ansicht = link.get('ansicht')
+    if (lernen) startStudy(lernen === 'alle' ? {} : { module: lernen }, { name: 'home' })
+    else if (ansicht === 'entwuerfe') setView({ name: 'drafts' })
+    else if (ansicht === 'plan') {
+      const monday = weekStart(isoDate(new Date()))
+      setView({ name: 'plan', monday: link.get('woche') === 'naechste' ? addDays(monday, 7) : monday })
+    }
+  }, [loaded, cards, link])
+
   function toggleReactivated(module: string) {
     const next = reactivated.includes(module) ? reactivated.filter((m) => m !== module) : [...reactivated, module]
     setReactivated(next)
@@ -286,7 +304,9 @@ export function App() {
   } else if (view.name === 'plan') {
     body = (
       <Plan
+        key={view.monday ?? 'heute'}
         store={store}
+        initialMonday={view.monday}
         modules={planModules.filter((m) => !paused.has(m.module))}
         colors={colors}
         now={now}

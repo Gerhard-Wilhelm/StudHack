@@ -31,12 +31,14 @@ export function Plan(props: {
   modules: PlanModule[]
   colors: Record<string, string>
   now: Date
+  /** Montag der Woche, die zuerst gezeigt wird (Standard: diese Woche) */
+  initialMonday?: string
   onStudy: (module: string) => void
   onBack: () => void
 }) {
   const { store } = props
   const today = isoDate(props.now)
-  const [monday, setMonday] = useState(weekStart(today))
+  const [monday, setMonday] = useState(props.initialMonday ?? weekStart(today))
   const [blocks, setBlocks] = useState<StudyBlock[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sheet, setSheet] = useState<Sheet>(null)

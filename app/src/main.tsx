@@ -4,6 +4,9 @@ import '@fontsource-variable/source-serif-4'
 import 'katex/dist/katex.min.css'
 import './styles.css'
 import { App } from './App'
+import { registerServiceWorker } from './lib/push'
+
+registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
