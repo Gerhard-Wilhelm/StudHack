@@ -63,7 +63,8 @@ def vorschau(cfg: dict, vault: Path, db: Vorschau, mit_fragen: bool) -> None:
         m_geaendert = sum(1 for m in module if vorhandene_module.get(m.modul) != m.hash)
         manifest = json.loads(lesemodus.MANIFEST.read_text()) if lesemodus.MANIFEST.exists() else {}
         bilder = {b.pfad: b for x in [*notizen, *module] for b in x.bilder}
-        return [f"Notizen: {n_neu} neu, {n_geaendert} geändert",
+        n_weg = len(set(vorhanden) - {n.notiz for n in notizen})
+        return [f"Notizen: {n_neu} neu, {n_geaendert} geändert, {n_weg} zu entfernen",
                 f"Modulinfos: {m_geaendert} neu oder geändert",
                 f"Bilder: {len(bilder_neu(bilder, manifest))} hochzuladen"]
 

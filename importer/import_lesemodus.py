@@ -14,7 +14,8 @@ Die Notiz wird ohne Frontmatter, Titelzeile und Abschnitt "Karteikarten" überno
 (die Karten liegen schon im Lernstapel). Von der Modulübersicht (<Modulname>.md im
 Modulordner) fallen "Wochen" (listet die App selbst) und "Offene Fragen" weg. Eingebettete Bilder ![[<Bild>.png]] werden
 verkleinert (JPEG, höchstens 1400 px breit) und als folien/<Kürzel>/<Bild>.jpg verlinkt.
-Unveränderte Notizen und Bilder werden übersprungen.
+Unveränderte Notizen und Bilder werden übersprungen. Ohne --modul und --notiz werden
+Notizen aus der Datenbank entfernt, die es im Vault nicht mehr gibt (z. B. nach Umbenennung).
 """
 
 import argparse
@@ -242,6 +243,10 @@ class Lesemodus(Supabase):
             json=[m.als_zeile(self.user_id) for m in module],
             headers={"Prefer": "resolution=merge-duplicates"}, timeout=60))
 
+    def delete_note(self, origin_ref: str) -> None:
+        self._check(self.s.delete(f"{self.url}/rest/v1/notes",
+                                  params={"origin_ref": f"eq.{origin_ref}"}, timeout=30))
+
     def upload(self, pfad: str, datei: Path) -> None:
         self._check(self.s.post(
             f"{self.url}/storage/v1/object/{BUCKET}/{self.user_id}/{pfad}",
@@ -280,6 +285,7 @@ def main() -> int:
     print(f"\nGesamt: {len(module)} Übersichten, {len(notizen)} Notizen, {len(bilder)} Bilder "
           f"(Originale {groesse / 1e6:.1f} MB, werden verkleinert)")
 
+    alle = not (args.modul or args.notiz)
     if not args.schreiben:
         print("\nTrockenlauf, nichts geschrieben. Zum Hochladen mit --schreiben aufrufen.")
         return 0
@@ -301,11 +307,16 @@ def main() -> int:
     vorhanden = db.existing_notes()
     geaendert = [n for n in notizen if vorhanden.get(n.notiz) != n.hash]
     db.upsert_notes(geaendert)
+    # Nur bei einem Lauf über alle Notizen: was im Vault fehlt, ist umbenannt oder gelöscht
+    verwaist = sorted(set(vorhanden) - {n.notiz for n in notizen}) if alle else []
+    for ref in verwaist:
+        db.delete_note(ref)
+        print(f"  Notiz entfernt (nicht mehr im Vault): {ref}")
     vorhandene_module = db.existing_modules() if module else {}
     module_geaendert = [m for m in module if vorhandene_module.get(m.modul) != m.hash]
     db.upsert_modules(module_geaendert)
     print(f"Bilder hochgeladen: {hochgeladen}, unverändert: {len(bilder) - hochgeladen}")
-    print(f"Notizen geschrieben: {len(geaendert)}, unverändert: {len(notizen) - len(geaendert)}")
+    print(f"Notizen geschrieben: {len(geaendert)}, unverändert: {len(notizen) - len(geaendert)}, entfernt: {len(verwaist)}")
     print(f"Übersichten geschrieben: {len(module_geaendert)}, unverändert: {len(module) - len(module_geaendert)}")
     return 0
 
