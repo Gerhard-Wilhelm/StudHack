@@ -151,6 +151,11 @@ Deno.serve(async (req) => {
     return antwort({ geraete: ok })
   } catch (e) {
     console.error(e)
-    return antwort({ fehler: e instanceof Error ? e.message : String(e) }, 500)
+    // Ablehnung des Push-Dienstes (z. B. Apple) mit Code und Grund weitergeben
+    const push = e as { statusCode?: number; body?: string }
+    const fehler = push.statusCode
+      ? `Push-Dienst lehnt ab (${push.statusCode}): ${push.body ?? ''}`.trim()
+      : e instanceof Error ? e.message : String(e)
+    return antwort({ fehler }, 500)
   }
 })
