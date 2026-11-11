@@ -141,6 +141,14 @@ body::before {
   margin: 0;
 }
 .summary { margin: 4px 0 16px; max-width: 36ch; font-size: 1rem; color: var(--muted); }
+/* Startseite: Gesamtzahlen in einer Zeile, bei schmalem Bildschirm mit "…" */
+.home .summary {
+  max-width: none;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .note, .hint, .legend {
   color: var(--muted);
