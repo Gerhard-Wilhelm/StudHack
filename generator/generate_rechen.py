@@ -97,7 +97,7 @@ So sind Felder und Quellen gemeint, das ist kein Grund zum Verwerfen:
 (Wert 20, Toleranz 0.005 heißt 20 % ± 0,005 Prozentpunkte). Die App nimmt auch den Anteil (0,2) an.
 - Nicht jede Teilaufgabe braucht ein Feld. Teile mit Textantwort (Entscheidung, Begründung) \
 beantwortet die Lösung.
-- Aufgaben mit "KI-Aufgabe" im Titel sind in der Notiz selbst erstellte Übungen. Ihre Quelle belegt \
+- Aufgaben mit "KI-Aufgabe" im Titel oder dahinter sind in der Notiz selbst erstellte Übungen. Ihre Quelle belegt \
 das Verfahren oder die Formel, nicht die Zahlen der Aufgabe.
 
 Urteil "ok" nur, wenn alle vier Punkte erfüllt sind, sonst "verwerfen". Begründe jedes Urteil in einem Satz.
@@ -183,6 +183,24 @@ class Aufgabe:
     nr: int
     titel: str
     teile: list[Teil]
+    # Steht "KI-Ergänzung" oder "KI-Aufgabe" nur im Vorspann darüber, nicht im Titel
+    ki: bool = False
+
+    @property
+    def kopf(self) -> str:
+        """Erste Zeile der Frage. Macht KI-Aufgaben auch dann kenntlich, wenn nur der Vorspann es sagt."""
+        return f"**{self.titel}** (KI-Aufgabe)" if self.ki and "KI" not in self.titel else f"**{self.titel}**"
+
+
+KI = re.compile(r"KI-(?:Ergänzung|Aufgabe)")
+# Ein Vorspann, der auch Aufgaben aus dem Material ankündigt ("Aufgaben 1 bis 3 stammen aus den Folien"),
+# kennzeichnet nicht pauschal. "Aufgaben sind KI-Ergänzung, nicht aus den Folien" und "die Verfahren
+# stammen aus den Folien" zählen nicht als solcher Hinweis.
+GEMISCHT = re.compile(r"Aufgaben?\b[^.]{0,40}?(?<!nicht )(?:stammen aus|aus den Folien)")
+
+
+def ki_hinweis(text: str) -> bool:
+    return bool(KI.search(text)) and not GEMISCHT.search(text)
 
 
 @dataclass
@@ -195,6 +213,9 @@ class Rechenaufgabe:
     eingaben: list[dict]
     quelle_datei: str
     quelle_seite: int
+    # Wörtlicher Aufgabentext der gewählten Teile, ohne Titel und Zusatz. Erkennt beim Nachziehen
+    # mit --neu Aufgaben, die schon angelegt sind, auch wenn Claude den Zusatz anders formuliert.
+    kern: str = ""
     hash: str = field(init=False)
 
     def __post_init__(self):
@@ -255,6 +276,8 @@ def zerlege(abschnitt: str) -> tuple[list[Aufgabe], str]:
     """
     koepfe = list(KOPF.finditer(abschnitt))
     stuecke = [abschnitt[:koepfe[0].start()] if koepfe else abschnitt]
+    # Ein Vorspann oder Zwischenblock ohne Lösung gilt für die Aufgaben darunter, bis zum nächsten
+    ki = ki_hinweis(stuecke[0])
     aufgaben: list[Aufgabe] = []
     for i, k in enumerate(koepfe):
         block = abschnitt[k.end():koepfe[i + 1].start() if i + 1 < len(koepfe) else len(abschnitt)]
@@ -262,21 +285,28 @@ def zerlege(abschnitt: str) -> tuple[list[Aufgabe], str]:
         teile = teile_von(block)
         if not teile:
             stuecke.append(abschnitt[k.start():k.end()] + block)
+            ki = ki_hinweis(titel + block)
             continue
         nr = len(aufgaben) + 1
-        aufgaben.append(Aufgabe(nr, titel, teile))
-        markiert = [f"[Aufgabe {nr}] {titel}"]
+        aufgaben.append(Aufgabe(nr, titel, teile, ki))
+        markiert = [f"[Aufgabe {nr}] {aufgaben[-1].kopf.strip('*').replace('** (', ' (')}"]
         for j, t in enumerate(teile, start=1):
             markiert.append(f"[Teil {nr}.{j}]\n{t.text}\nLösung:\n{t.loesung}")
         stuecke.append("\n\n".join(markiert) + "\n\n")
     return aufgaben, "".join(stuecke).strip()
 
 
+def kern(a: dict, aufgaben: list[Aufgabe]) -> str:
+    """Wörtlicher Text der gewählten Teile, siehe Rechenaufgabe.kern."""
+    teile = aufgaben[a["aufgabe"] - 1].teile
+    return "\n\n".join(teile[k - 1].text for k in sorted(set(a["teile"])) if teile[k - 1].text)
+
+
 def baue(a: dict, aufgaben: list[Aufgabe]) -> tuple[str, str]:
     """Frage und Lösung aus den gewählten Teilen, wörtlich aus der Notiz."""
     aufgabe = aufgaben[a["aufgabe"] - 1]
     teile = [aufgabe.teile[k - 1] for k in sorted(set(a["teile"]))]
-    frage = "\n\n".join(x for x in [f"**{aufgabe.titel}**", a["zusatz"].strip(), *(t.text for t in teile)] if x)
+    frage = "\n\n".join(x for x in [aufgabe.kopf, a["zusatz"].strip(), *(t.text for t in teile)] if x)
     return frage, "\n\n".join(t.loesung for t in teile if t.loesung)
 
 
@@ -298,8 +328,6 @@ def strukturfehler(a: dict, aufgaben: list[Aufgabe]) -> str | None:
             return "Feld ohne Beschriftung"
         if not math.isfinite(e["wert"]) or not math.isfinite(e["toleranz"]) or e["toleranz"] < 0:
             return "ungültiger Sollwert oder Toleranz"
-        if e["wert"] and e["toleranz"] > abs(e["wert"]) * 0.01 + 0.005:
-            return f"Toleranz zu groß bei {e['label']}"
     if len({e["label"].strip() for e in felder}) != len(felder):
         return "doppelte Beschriftung"
     if a["quelle_seite"] < 1 or not a["quelle_datei"].lower().endswith(".pdf"):
@@ -307,9 +335,15 @@ def strukturfehler(a: dict, aufgaben: list[Aufgabe]) -> str | None:
     return None
 
 
+def max_toleranz(wert: float) -> float:
+    """Höchstens 2 % des Werts oder 0,01. Großzügiger als im Auftrag an Claude (1 %), damit Rundung
+    aus Zwischenwerten durchgeht, aber eng genug, dass ein falsches Ergebnis nicht als richtig zählt."""
+    return max(abs(wert) * 0.02, 0.01)
+
+
 def felder(a: dict) -> list[dict]:
-    """Eingabefelder bereinigt, so wie sie in items.eingaben landen."""
-    return [{"label": e["label"].strip(), "wert": e["wert"], "toleranz": e["toleranz"],
+    """Eingabefelder bereinigt, so wie sie in items.eingaben landen. Zu große Toleranzen werden begrenzt."""
+    return [{"label": e["label"].strip(), "wert": e["wert"], "toleranz": min(e["toleranz"], max_toleranz(e["wert"])),
              "einheit": e["einheit"].strip()} for e in a["eingaben"]]
 
 
@@ -333,7 +367,7 @@ def erzeuge(client, notiz, kosten: Kosten) -> tuple[list[Rechenaufgabe], list[tu
             verworfen.append((f"Aufgabe {a['aufgabe']}, Teile {a['teile']}", grund))
         else:
             frage, loesung = baue(a, aufgaben)
-            kandidaten.append({**a, "frage": frage, "loesung": loesung})
+            kandidaten.append({**a, "frage": frage, "loesung": loesung, "kern": kern(a, aufgaben)})
     if not kandidaten:
         return [], verworfen
 
@@ -357,7 +391,8 @@ def erzeuge(client, notiz, kosten: Kosten) -> tuple[list[Rechenaufgabe], list[tu
     for i, a in enumerate(kandidaten, start=1):
         if i in ok:
             behalten.append(Rechenaufgabe(notiz.modul, notiz.woche, notiz.notiz, a["frage"], a["loesung"],
-                                          felder(a), Path(a["quelle_datei"]).name, a["quelle_seite"]))
+                                          felder(a), Path(a["quelle_datei"]).name, a["quelle_seite"],
+                                          a["kern"]))
         else:
             verworfen.append((a["frage"], f"Prüfung: {gruende.get(i, 'kein Urteil')}"))
     return behalten, verworfen
@@ -369,6 +404,13 @@ class Generator(Supabase):
             "select": "origin_ref", "origin": "eq.generator", "type": "eq.rechenaufgabe",
             "limit": 10000}, timeout=30))
         return {row["origin_ref"] for row in r.json()}
+
+    def vorhandene_fragen(self, notiz: str) -> list[str]:
+        """Fragen der Rechenaufgaben, die zu dieser Notiz schon angelegt sind (jeder Status)."""
+        r = self._check(self.s.get(f"{self.url}/rest/v1/items", params={
+            "select": "question", "origin": "eq.generator", "type": "eq.rechenaufgabe",
+            "origin_ref": f"eq.{notiz}", "limit": 1000}, timeout=30))
+        return [row["question"] for row in r.json()]
 
     def als_entwuerfe(self, aufgaben: list[Rechenaufgabe]) -> int:
         """Legt Entwürfe samt Lernstand an. Schon vorhandene Aufgaben (gleicher Hash) werden übersprungen."""
@@ -459,6 +501,12 @@ def main() -> int:
             print(f"\n  Verworfen ({grund}): {frage[:140]}")
         behalten_gesamt += len(behalten)
         verworfen_gesamt += len(verworfen)
+        if db and args.neu:
+            vorhanden = db.vorhandene_fragen(n.notiz)
+            neu = [a for a in behalten if not any(a.kern and a.kern in q for q in vorhanden)]
+            if len(neu) < len(behalten):
+                print(f"\n  {len(behalten) - len(neu)} schon vorhanden, werden nicht doppelt angelegt")
+            behalten = neu
         if db:
             angelegt += db.als_entwuerfe(behalten)
         print(f"\n  Bisherige Kosten: {kosten.dollar:.2f} Dollar")
