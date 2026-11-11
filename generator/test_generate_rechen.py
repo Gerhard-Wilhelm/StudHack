@@ -2,7 +2,7 @@
 
 import unittest
 
-from generator.generate_rechen import Rechenaufgabe, abschnitte, aktiv, baue, felder, strukturfehler, zerlege
+from generator.generate_rechen import Rechenaufgabe, abschnitte, aktiv, baue, felder, kern, strukturfehler, zerlege
 
 # Selbst geschriebener Abschnitt mit den drei Formen aus den Notizen
 UEBUNGEN = """Vorspann: Alle Zinsen sind jährlich.
@@ -88,6 +88,9 @@ class ZerlegenTest(unittest.TestCase):
         self.assertTrue(frage.startswith("**Aufgabe 2: Zwei Teile**\n\nKalkulationszins 10 %.\n\nEin Projekt"))
         self.assertTrue(frage.endswith("b) Interner Zinssatz?"))
         self.assertEqual(loesung, "$-1{,}82$ €\n\n8 %")
+        self.assertEqual(kern(roh(aufgabe=2, teile=[2, 1], zusatz="X"), self.aufgaben).split("\n\n")[-1],
+                         "b) Interner Zinssatz?")
+        self.assertIn(kern(roh(aufgabe=3, teile=[2]), self.aufgaben), baue(roh(aufgabe=3, teile=[2]), self.aufgaben)[0])
         frage, loesung = baue(roh(aufgabe=3, teile=[2]), self.aufgaben)
         self.assertEqual(frage, "**Rechenaufgaben**\n\n**R2.** Mittel von 2 und 4?")
         self.assertEqual(loesung, "3")
@@ -104,7 +107,8 @@ class StrukturTest(unittest.TestCase):
         self.assertIsNone(strukturfehler(roh(), self.aufgaben))
         self.assertIsNone(strukturfehler(roh(eingaben=[feld(), feld(label="b) Zinsen", wert=102.5)]), self.aufgaben))
         self.assertIsNone(strukturfehler(roh(eingaben=[feld(wert=0, toleranz=0)]), self.aufgaben))
-        self.assertIsNone(strukturfehler(roh(eingaben=[feld(wert=200, toleranz=2)]), self.aufgaben))
+        self.assertIsNone(strukturfehler(roh(eingaben=[feld(wert=200, toleranz=4)]), self.aufgaben))
+        self.assertIsNone(strukturfehler(roh(eingaben=[feld(wert=0.33, toleranz=0.01)]), self.aufgaben))
 
     def test_fehler(self):
         f = lambda **o: strukturfehler(roh(**o), self.aufgaben)
@@ -117,10 +121,42 @@ class StrukturTest(unittest.TestCase):
         self.assertIsNotNone(f(eingaben=[feld(), feld()]))
         self.assertIsNotNone(f(eingaben=[feld(label=" ")]))
         self.assertIsNotNone(f(eingaben=[feld(toleranz=-1)]))
-        self.assertIsNotNone(f(eingaben=[feld(toleranz=50)]))
         self.assertIsNotNone(f(eingaben=[feld(wert=float("nan"))]))
         self.assertIsNotNone(f(quelle_seite=0))
         self.assertIsNotNone(f(quelle_datei="Notiz"))
+
+
+class ToleranzTest(unittest.TestCase):
+    def test_zu_gross_wird_begrenzt(self):
+        t = lambda **o: felder(roh(eingaben=[feld(**o)]))[0]["toleranz"]
+        self.assertEqual(t(toleranz=0.005), 0.005)
+        self.assertAlmostEqual(t(toleranz=50), 22.05)
+        self.assertEqual(t(wert=200, toleranz=4), 4)
+        self.assertEqual(t(wert=200, toleranz=4.5), 4)
+        self.assertEqual(t(wert=0.3, toleranz=0.05), 0.01)
+        self.assertEqual(t(wert=0, toleranz=0.02), 0.01)
+
+
+class KiTest(unittest.TestCase):
+    def test_vorspann_kennzeichnet_bis_zum_naechsten(self):
+        text = ("Die folgenden Aufgaben sind KI-Ergänzungen.\n\n### Aufgabe 1: Zins\n\nX?\n\n> [!question]- Lösung\n> 1\n\n"
+                "### Aus dem Übungsblatt\n\nOffizielle Aufgaben.\n\n### Aufgabe 2: Rente\n\nY?\n\n> [!question]- Lösung\n> 2\n\n"
+                "### KI-Aufgaben im Klausurstil\n\nKI-Ergänzung, nicht aus den Folien.\n\n"
+                "### KI-Aufgabe E1: Barwert\n\nZ?\n\n> [!question]- Lösung\n> 3\n")
+        a = zerlege(text)[0]
+        self.assertEqual([x.ki for x in a], [True, False, True])
+        self.assertEqual(baue(roh(aufgabe=1), a)[0], "**Aufgabe 1: Zins** (KI-Aufgabe)\n\nX?")
+        self.assertEqual(baue(roh(aufgabe=2), a)[0], "**Aufgabe 2: Rente**\n\nY?")
+        self.assertEqual(baue(roh(aufgabe=3), a)[0], "**KI-Aufgabe E1: Barwert**\n\nZ?")
+        self.assertIn("[Aufgabe 1] Aufgabe 1: Zins (KI-Aufgabe)", zerlege(text)[1])
+
+    def test_gemischter_vorspann_kennzeichnet_nicht(self):
+        text = ("Aufgaben 1 bis 3 stammen aus den Folien, 4 bis 6 sind KI-Aufgaben.\n\n"
+                "### Aufgabe 1: Takt\n\nX?\n\n> [!question]- Lösung\n> 1\n")
+        self.assertFalse(zerlege(text)[0][0].ki)
+        self.assertTrue(zerlege("KI-Ergänzung, nicht aus den Folien.\n\n### A\n\nX?\n\n> [!question]- Lösung\n> 1\n")[0][0].ki)
+        self.assertTrue(zerlege("Die folgenden Aufgaben sind KI-Ergänzung, nicht aus den Folien. Die Verfahren stammen "
+                                "aus den Folien.\n\n### A\n\nX?\n\n> [!question]- Lösung\n> 1\n")[0][0].ki)
 
 
 class AbschnitteTest(unittest.TestCase):
