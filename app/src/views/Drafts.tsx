@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Markdown } from '../components/Markdown'
 import { correctSet, isChoice } from '../lib/choice'
 import type { Item } from '../lib/types'
+import { zeigeZahl } from '../lib/zahlen'
 import { TYPE_LABEL } from './Study'
 
 type Decision = 'freigegeben' | 'verworfen'
@@ -79,6 +80,18 @@ export function Drafts(props: {
                         </li>
                       ))}
                     </ol>
+                  ) : d.eingaben?.length ? (
+                    <ul className="draft-fields">
+                      {d.eingaben.map((f, i) => (
+                        <li key={i}>
+                          <Markdown text={f.label} />
+                          <span className="draft-value">
+                            {zeigeZahl(f.wert, f.einheit)}
+                            {f.toleranz > 0 && <small> ± {zeigeZahl(f.toleranz)}</small>}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   ) : null}
                   <Markdown className="draft-answer" text={d.answer} />
                   {d.source_file && (

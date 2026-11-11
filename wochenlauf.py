@@ -4,11 +4,12 @@ Erst eine Vorschau (liest nur, kostet nichts), dann nach Rückfrage der Reihe na
   1. importer.import_notes --schreiben       Karteikarten und Verständnisfragen
   2. importer.import_lesemodus --schreiben   Notizen, Modulinfos, Folienbilder
   3. generator.generate_mc --schreiben       Auswahlfragen als Entwürfe (Claude API)
-  4. kalender                                Lernplan aus der App nach 02 Lernplan/Kalender.md
+  4. generator.generate_rechen --schreiben   Rechenaufgaben aus den Übungsaufgaben als Entwürfe (Claude API)
+  5. kalender                                Lernplan aus der App nach 02 Lernplan/Kalender.md
 
 Aufruf (im Ordner Lernassistent):
   .venv/bin/python -m wochenlauf                 # Vorschau, dann Rückfrage
-  .venv/bin/python -m wochenlauf --ohne-fragen   # ohne Auswahlfragen
+  .venv/bin/python -m wochenlauf --ohne-fragen   # ohne Auswahl- und Rechenaufgaben
   .venv/bin/python -m wochenlauf --ja            # ohne Rückfrage
 
 Schlägt ein Schritt fehl, laufen die anderen trotzdem. Ein erneuter Aufruf erledigt nur, was fehlt.
@@ -22,6 +23,7 @@ from pathlib import Path
 
 import yaml
 
+from generator import generate_rechen as rechen
 from generator.generate_mc import Generator, anzahl
 from importer import import_lesemodus as lesemodus
 from importer.import_notes import PROJECT_DIR, aenderungen, find_notes, lese_alle
@@ -78,15 +80,26 @@ def vorschau(cfg: dict, vault: Path, db: Vorschau, mit_fragen: bool) -> None:
         return [f"{n.modul} W{n.woche:02d} {n.titel}" for n in offen] + [
             f"{len(offen)} Notizen, geschätzt etwa {len(offen) * KOSTEN_JE_NOTIZ:.2f} Dollar"]
 
+    def rechenaufgaben():
+        fertig = rechen.Generator.bearbeitete_notizen(db)
+        offen = [n for n in (lesemodus.parse_note(p, vault) for p in find_notes(vault, None, None))
+                 if n and n.notiz not in fertig and rechen.aktiv(cfg, n.modul)
+                 and "## Übungsaufgaben" in rechen.abschnitte(n.text)]
+        if not offen:
+            return ["alle Notizen mit Übungsaufgaben haben schon Rechenaufgaben"]
+        return [f"{n.modul} W{n.woche:02d} {n.titel}" for n in offen] + [
+            f"{len(offen)} Notizen, geschätzt etwa {len(offen) * rechen.DOLLAR_JE_NOTIZ:.2f} Dollar"]
+
     teil("Karteikarten und Verständnisfragen", karten)
     teil("Lesemodus", lesen)
     if mit_fragen:
         teil("Auswahlfragen (Claude API)", fragen)
+        teil("Rechenaufgaben (Claude API)", rechenaufgaben)
 
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Neue Wochennotizen in die App bringen")
-    p.add_argument("--ohne-fragen", action="store_true", help="keine Auswahlfragen erzeugen")
+    p.add_argument("--ohne-fragen", action="store_true", help="keine Auswahl- und Rechenaufgaben erzeugen")
     p.add_argument("--ja", action="store_true", help="ohne Rückfrage ausführen")
     args = p.parse_args()
 
@@ -107,6 +120,7 @@ def main() -> int:
     schritte = [("Karteikarten", "importer.import_notes"), ("Lesemodus", "importer.import_lesemodus")]
     if not args.ohne_fragen:
         schritte.append(("Auswahlfragen", "generator.generate_mc"))
+        schritte.append(("Rechenaufgaben", "generator.generate_rechen"))
 
     ergebnis = []
     for name, modul in schritte:
@@ -120,7 +134,7 @@ def main() -> int:
     for name, code in ergebnis:
         print(f"  {name}: {'fertig' if code == 0 else f'Fehler (Code {code}), erneut aufrufen holt es nach'}")
     if not args.ohne_fragen:
-        print("Neue Auswahlfragen gibst du in der App unter \"Entwürfe prüfen\" frei.")
+        print("Neue Auswahl- und Rechenaufgaben gibst du in der App unter \"Entwürfe prüfen\" frei.")
     return 0 if all(code == 0 for _, code in ergebnis) else 1
 
 

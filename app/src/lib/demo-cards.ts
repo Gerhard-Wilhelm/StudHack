@@ -14,6 +14,7 @@ export const DEMO_ITEMS: Item[] = [
     question: 'Du legst $1000$ € zu $5\\,\\%$ Zins für zwei Jahre an. Wie viel hast du am Ende?',
     answer: '$$K_2 = 1000 \\cdot 1{,}05^2 = 1102{,}50$$\nAlso **1102,50 €**. Siehe [[Demo_Finanzen.pdf#page=4|Demo Finanzen S. 4]].',
     options: null, source_file: 'Demo_Finanzen.pdf', source_page: 4,
+    eingaben: [{ label: 'Endkapital $K_2$', wert: 1102.5, toleranz: 0.005, einheit: '€' }],
   },
   {
     id: 3, module: 'Finanzen', week: 2, type: 'verstaendnisfrage',
@@ -45,6 +46,7 @@ export const DEMO_ITEMS: Item[] = [
     question: 'Bestimme den Median von $3, 9, 4, 7, 1$.',
     answer: 'Sortiert: $1, 3, 4, 7, 9$. Der mittlere Wert ist **4**.',
     options: null, source_file: 'Demo_Statistik.pdf', source_page: 5,
+    eingaben: [{ label: 'Median', wert: 4, toleranz: 0, einheit: '' }],
   },
   {
     id: 8, module: 'Statistik', week: 2, type: 'verstaendnisfrage',
@@ -96,5 +98,15 @@ export const DEMO_DRAFTS: Item[] = [
     answer: 'Der Median hängt nur von der Mitte der sortierten Daten ab. Mittelwert und Summe steigen, die Spannweite auch.',
     options: { choices: ['Median', 'Arithmetisches Mittel', 'Spannweite', 'Summe der Werte'], correct: 0 },
     source_file: 'Demo_Statistik.pdf', source_page: 5,
+  },
+  {
+    id: 104, module: 'Finanzen', week: 2, type: 'rechenaufgabe',
+    question: 'Ein Projekt kostet heute $100$ € und bringt in einem Jahr $108$ €. Der Kalkulationszins ist $10\\,\\%$.\n\na) Wie hoch ist der Kapitalwert?\n\nb) Wie hoch ist der interne Zinssatz?',
+    answer: 'a) $C_0 = -100 + \\frac{108}{1{,}1} = -1{,}82$ €, das Projekt lohnt sich nicht.\n\nb) $-100 + \\frac{108}{1 + i} = 0$ ergibt $i = 8\\,\\%$.',
+    options: null, source_file: 'Demo_Finanzen.pdf', source_page: 9,
+    eingaben: [
+      { label: 'a) Kapitalwert', wert: -1.82, toleranz: 0.005, einheit: '€' },
+      { label: 'b) Interner Zinssatz', wert: 8, toleranz: 0.005, einheit: '%' },
+    ],
   },
 ]

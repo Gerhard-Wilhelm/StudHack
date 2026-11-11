@@ -11,8 +11,18 @@ export interface Item {
   answer: string
   /** single_choice: correct ist eine Position, multiple_choice: Liste von Positionen (ab 0) */
   options: { choices: string[]; correct: number | number[] } | null
+  /** nur rechenaufgabe: Felder für die Zahleneingabe, sonst null oder fehlend */
+  eingaben?: Eingabe[] | null
   source_file: string | null
   source_page: number | null
+}
+
+/** Ein Eingabefeld einer Rechenaufgabe. Bei einheit "%" steht wert in Prozent. */
+export interface Eingabe {
+  label: string
+  wert: number
+  toleranz: number
+  einheit: string
 }
 
 /** FSRS-Felder einer Zeile in card_states (ohne item_id und user_id). */

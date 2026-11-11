@@ -12,7 +12,7 @@ const SIGNED_URL_SECONDS = 3600
 
 const STATE_COLUMNS =
   'item_id,due,stability,difficulty,elapsed_days,scheduled_days,learning_steps,reps,lapses,state,last_review'
-const ITEM_COLUMNS = 'id,module,week,type,question,answer,options,source_file,source_page'
+const ITEM_COLUMNS = 'id,module,week,type,question,answer,options,eingaben,source_file,source_page'
 
 type Row = CardStateFields & { item_id: number; items: Item }
 

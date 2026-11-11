@@ -11,7 +11,7 @@ export const ARTEN: { art: Art; label: string; hint: string }[] = [
   { art: 'morgen', label: 'Morgenüberblick', hint: '07:30, Blöcke und Wiederholungen des Tages' },
   { art: 'abend', label: 'Wiederholungen offen', hint: '20:30, nur wenn noch etwas fällig ist' },
   { art: 'wochenplan', label: 'Wochenplan fehlt', hint: 'Sonntag 18:00, wenn die nächste Woche leer ist' },
-  { art: 'entwuerfe', label: 'Neue Entwürfe', hint: 'wenn neue Auswahlfragen auf Freigabe warten' },
+  { art: 'entwuerfe', label: 'Neue Entwürfe', hint: 'wenn neue Auswahl- oder Rechenaufgaben auf Freigabe warten' },
 ]
 
 export const ALLE_AN: Prefs = { block: true, morgen: true, abend: true, wochenplan: true, entwuerfe: true }
