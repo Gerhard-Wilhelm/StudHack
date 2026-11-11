@@ -154,3 +154,34 @@ export function copyWeek(blocks: StudyBlock[], fromMonday: string, toMonday: str
     done: false,
   }))
 }
+
+export interface NaechsterBlock {
+  block: StudyBlock
+  /** true, wenn der Block gerade läuft */
+  laeuft: boolean
+  /** Minuten bis zum Beginn, oder bei laufendem Block bis zum Ende */
+  minuten: number
+}
+
+/** Laufender oder nächster offener Block von heute. Null, wenn keiner mehr kommt. */
+export function naechsterBlock(blocks: StudyBlock[], now: Date): NaechsterBlock | null {
+  const jetzt = now.getHours() * 60 + now.getMinutes()
+  const minute = (t: string) => {
+    const [h, m] = hhmm(t).split(':').map(Number)
+    return h * 60 + m
+  }
+  for (const b of sortBlocks(blocks.filter((x) => !x.done && x.day === isoDate(now)))) {
+    const start = minute(b.start_time)
+    const ende = start + b.duration_min
+    if (jetzt < start) return { block: b, laeuft: false, minuten: start - jetzt }
+    if (jetzt < ende) return { block: b, laeuft: true, minuten: ende - jetzt }
+  }
+  return null
+}
+
+/** "1 Std. 48 Min.", "45 Min." */
+export function dauerText(min: number): string {
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return h ? `${h} Std.${m ? ` ${m} Min.` : ''}` : `${m} Min.`
+}
