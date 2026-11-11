@@ -37,7 +37,7 @@ flowchart LR
 | Wochenbefehl | `wochenlauf.py` | Vorschau (nur lesend), dann Karten-Importer, Lesemodus-Importer, Generator, Kalender |
 | Kalender | `kalender.py` | Liest die Lernblöcke aus `study_blocks` (nur lesend) und schreibt `<Vault>/02 Lernplan/Kalender.md`, läuft beim täglichen Scan und bei `wochenlauf` |
 | Mitteilungen | `supabase/functions/erinnerungen/` | Edge Function, alle 5 Minuten per pg_cron: Web-Push an die angemeldeten Geräte (Blockbeginn, Morgenüberblick, offene Wiederholungen, Wochenplan fehlt, neue Entwürfe), Ruhezeit 22 bis 7 Uhr, keine Doppelmeldungen |
-| App | `app/` | Vite, React, TypeScript. Login, Startseite mit Klausur-Countdown, Lernplan mit verschiebbaren Blöcken, Wochenliste, Lesemodus, Lernen mit FSRS (ts-fsrs), Auswahlfragen, Rechenaufgaben mit Zahleneingabe, Freigabe-Liste, Demo-Modus. Details in `app/README.md` |
+| App | `app/` | Vite, React, TypeScript. Login, Startseite mit Klausur-Countdown, Lernplan mit verschiebbaren Blöcken, Wochenliste, Lesemodus, Lernen mit FSRS (ts-fsrs), Auswahlfragen, Rechenaufgaben mit Zahleneingabe, Freigabe-Liste, Offline-Modus, Demo-Modus. Details in `app/README.md` |
 
 Importer und Generator schreiben nur mit `--schreiben`, ohne die Option ist es ein
 Trockenlauf (der Generator ruft mit `--notiz` oder `--modul` trotzdem die API auf).

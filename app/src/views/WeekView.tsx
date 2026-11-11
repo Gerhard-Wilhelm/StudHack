@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { NoteBody } from '../components/NoteBody'
 import type { Counts } from '../lib/queue'
 import type { Store } from '../lib/store'
+import { fehlerText } from '../lib/offline'
 import type { Note, NoteSummary } from '../lib/types'
 
 export function WeekView(props: {
@@ -28,7 +29,7 @@ export function WeekView(props: {
     store
       .loadNote(summary.id)
       .then((n) => !cancelled && setNote(n))
-      .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e: unknown) => !cancelled && setError(fehlerText(e)))
     return () => {
       cancelled = true
     }

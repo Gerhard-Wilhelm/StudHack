@@ -108,6 +108,23 @@ Tippen öffnet das Menü, lange drücken und ziehen verschiebt. Vorschlag nach
 Klausurnähe oder Vorwoche übernehmen. Gespeichert in `study_blocks` (Migration
 `20261111120000_lernplan.sql`), `kalender.py` schreibt den Plan in den Vault.
 
+## Offline-Modus
+
+Ohne Netz startet die App aus dem Zwischenspeicher des Service Workers
+(`public/sw.js`): Die Startseite kommt zuerst aus dem Netz, damit eine neue
+Version sofort ankommt, Dateien unter `assets/` aus dem Speicher. Teile, die
+erst bei Bedarf laden (Mermaid), sind offline da, wenn sie einmal benutzt wurden.
+
+- Karten, Notizliste, Modulinfos und Lernblöcke: letzter Stand in localStorage
+- Wochennotizen: IndexedDB, jede geöffnete sofort, alle einmal am Tag im
+  Hintergrund (`src/lib/offline.ts`)
+- Folienbilder: vom Service Worker gespeichert, Schlüssel ohne den Token der
+  signierten Adresse. Einstellungen, "Folienbilder für offline laden" holt alle
+- Bewertungen: Warteliste, wird beim nächsten Laden oder sobald das Netz
+  zurück ist gesendet
+- Lernplan bearbeiten, Entwürfe freigeben und Mitteilungen brauchen Netz und
+  sagen das auch so. Oben erscheint "Offline", solange keine Verbindung besteht.
+
 ## Mitteilungen
 
 Einstellungen, Abschnitt "Mitteilungen": Gerät anmelden, Schalter je Art,

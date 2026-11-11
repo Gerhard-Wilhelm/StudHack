@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { hhmm, type NewBlock, type StudyBlock } from './plan'
+import { folienPfade, idbAblage, vorladenFaellig, type Ablage } from './offline'
+import { hhmm, isoDate, type NewBlock, type StudyBlock } from './plan'
 import type { Store } from './store'
 import type { CardStateFields, Item, ModuleInfo, Note, NoteSummary, ReviewRecord, StudyCard } from './types'
 
@@ -8,7 +9,12 @@ const CACHE_KEY = 'studhack.cards'
 const PAGE = 1000
 const NOTES_CACHE_KEY = 'studhack.notes'
 const MODULES_CACHE_KEY = 'studhack.modules'
+const BLOCKS_CACHE_KEY = 'studhack.blocks'
+const VORLADEN_KEY = 'studhack.vorgeladen'
 const SIGNED_URL_SECONDS = 3600
+// Gemerkte Zeiträume des Lernplans, die neuesten zuerst
+const BLOCKS_CACHE_MAX = 8
+const BILDER_JE_ABFRAGE = 50
 
 const STATE_COLUMNS =
   'item_id,due,stability,difficulty,elapsed_days,scheduled_days,learning_steps,reps,lapses,state,last_review'
@@ -35,7 +41,10 @@ function writeJson(key: string, value: unknown) {
 export class SupabaseStore implements Store {
   kind = 'supabase' as const
 
-  constructor(private sb: SupabaseClient) {}
+  constructor(
+    private sb: SupabaseClient,
+    private ablage: Ablage = idbAblage,
+  ) {}
 
   pendingCount(): number {
     return readJson<ReviewRecord[]>(PENDING_KEY, []).length
@@ -88,13 +97,48 @@ export class SupabaseStore implements Store {
   }
 
   async loadNote(id: number): Promise<Note> {
-    const { data, error } = await this.sb
-      .from('notes')
-      .select('id,module,week,title,body,source_file')
-      .eq('id', id)
-      .single()
+    try {
+      const { data, error } = await this.sb
+        .from('notes')
+        .select('id,module,week,title,body,source_file')
+        .eq('id', id)
+        .single()
+      if (error) throw error
+      await this.ablage.schreiben([data as Note]).catch(() => undefined)
+      return data as Note
+    } catch (e) {
+      const gemerkt = await this.ablage.lesen(id).catch(() => undefined)
+      if (gemerkt) return gemerkt
+      throw e
+    }
+  }
+
+  async vorladen(): Promise<void> {
+    const heute = isoDate(new Date())
+    if (!vorladenFaellig(localStorage.getItem(VORLADEN_KEY), heute)) return
+    const { data, error } = await this.sb.from('notes').select('id,module,week,title,body,source_file')
     if (error) throw error
-    return data as Note
+    await this.ablage.schreiben(data as Note[])
+    localStorage.setItem(VORLADEN_KEY, heute)
+  }
+
+  async bilderVorladen(fortschritt: (fertig: number, gesamt: number) => void): Promise<number> {
+    const notizen = await this.ablage.alle()
+    const module = readJson<ModuleInfo[]>(MODULES_CACHE_KEY, [])
+    const pfade = folienPfade([...notizen.map((n) => n.body), ...module.map((m) => m.body)])
+    let fertig = 0
+    fortschritt(0, pfade.length)
+    for (let i = 0; i < pfade.length; i += BILDER_JE_ABFRAGE) {
+      const urls = await this.resolveImages(pfade.slice(i, i + BILDER_JE_ABFRAGE))
+      // Der Service Worker speichert jede geladene Folie. Vier gleichzeitig schonen die Verbindung.
+      const liste = Object.values(urls)
+      for (let j = 0; j < liste.length; j += 4) {
+        await Promise.all(liste.slice(j, j + 4).map((u) => fetch(u).then((r) => r.blob()).catch(() => undefined)))
+        fertig += liste.slice(j, j + 4).length
+        fortschritt(fertig, pfade.length)
+      }
+    }
+    return pfade.length
   }
 
   async loadDrafts(): Promise<Item[]> {
@@ -116,15 +160,25 @@ export class SupabaseStore implements Store {
   }
 
   async loadBlocks(from: string, to: string): Promise<StudyBlock[]> {
-    const { data, error } = await this.sb
-      .from('study_blocks')
-      .select('id,module,day,start_time,duration_min,done')
-      .gte('day', from)
-      .lte('day', to)
-      .order('day')
-      .order('start_time')
-    if (error) throw error
-    return (data as StudyBlock[]).map((b) => ({ ...b, start_time: hhmm(b.start_time) }))
+    const key = `${from}|${to}`
+    const gemerkt = readJson<[string, StudyBlock[]][]>(BLOCKS_CACHE_KEY, [])
+    try {
+      const { data, error } = await this.sb
+        .from('study_blocks')
+        .select('id,module,day,start_time,duration_min,done')
+        .gte('day', from)
+        .lte('day', to)
+        .order('day')
+        .order('start_time')
+      if (error) throw error
+      const blocks = (data as StudyBlock[]).map((b) => ({ ...b, start_time: hhmm(b.start_time) }))
+      writeJson(BLOCKS_CACHE_KEY, [[key, blocks], ...gemerkt.filter(([k]) => k !== key)].slice(0, BLOCKS_CACHE_MAX))
+      return blocks
+    } catch (e) {
+      const treffer = gemerkt.find(([k]) => k === key)
+      if (treffer) return treffer[1]
+      throw e
+    }
   }
 
   async saveBlock(block: NewBlock): Promise<StudyBlock> {
@@ -162,10 +216,18 @@ export class SupabaseStore implements Store {
     const { data: auth } = await this.sb.auth.getSession()
     const uid = auth.session?.user.id
     if (!uid || paths.length === 0) return {}
-    const { data, error } = await this.sb.storage
+    const signiert = await this.sb.storage
       .from('folien')
       .createSignedUrls(paths.map((p) => `${uid}/${p}`), SIGNED_URL_SECONDS)
-    if (error) throw error
+      .catch((e: unknown) => ({ data: null, error: e }))
+    const { data, error } = signiert
+    if (error || !data) {
+      // Ohne Netz gibt es keine signierten Adressen. Die Adresse ohne Token liefert der Service Worker
+      // aus dem Speicher, wenn die Folie schon einmal geladen wurde.
+      const basis = import.meta.env.VITE_SUPABASE_URL as string | undefined
+      if (!basis) throw error
+      return Object.fromEntries(paths.map((p) => [p, `${basis}/storage/v1/object/sign/folien/${uid}/${p}`]))
+    }
     const urls: Record<string, string> = {}
     for (const row of data) {
       if (row.signedUrl && row.path) urls[row.path.slice(uid.length + 1)] = row.signedUrl

@@ -61,6 +61,7 @@ Bestehend:
   Modulinfo, Wochenansicht mit Notiz, Folienbildern und Mermaid, Lernen mit FSRS
   inklusive Auswahlfragen und Rechenaufgaben mit Zahleneingabe, Freigabe-Liste für Entwürfe, Klausur-Countdown,
   neue Karten an die Module mit Lernblock heute (sonst nach Klausurnähe), Module nach der Klausur pausiert,
+  Offline-Modus (Service Worker `public/sw.js`, Notizen in IndexedDB, Logik in `src/lib/offline.ts`),
   Demo-Modus. Schlüssel in `app/.env.local`, Details in `app/README.md`
 
 Geplant:

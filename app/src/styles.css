@@ -336,6 +336,7 @@ code { font-size: 0.9em; }
   font-weight: 650;
   border-radius: 0 0 10px 10px;
 }
+.offline-band { background: var(--muted); }
 
 /* Wochenliste ------------------------------------------------------------ */
 

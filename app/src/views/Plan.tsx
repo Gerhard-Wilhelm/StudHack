@@ -3,6 +3,7 @@ import {
   addDays, addMinutes, BLOCK_MIN, copyWeek, formatDay, hoursPerModule, isoDate, isoWeek, sortBlocks,
   suggestWeek, timeSlots, weekDays, weekStart, type NewBlock, type StudyBlock,
 } from '../lib/plan'
+import { fehlerText } from '../lib/offline'
 import type { Store } from '../lib/store'
 
 export interface PlanModule {
@@ -52,7 +53,7 @@ export function Plan(props: {
     try {
       setBlocks(await store.loadBlocks(monday, sunday))
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(fehlerText(e))
       setBlocks([])
     }
   }, [store, monday, sunday])
@@ -67,7 +68,7 @@ export function Plan(props: {
       const saved = await store.saveBlock(block)
       setBlocks((bs) => sortBlocks([...(bs ?? []).filter((b) => b.id !== saved.id), saved]).filter((b) => b.day >= monday && b.day <= sunday))
     } catch (e) {
-      setError(`Speichern fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`)
+      setError(`Speichern fehlgeschlagen: ${fehlerText(e)}`)
     }
   }
 
@@ -76,7 +77,7 @@ export function Plan(props: {
       await store.deleteBlock(id)
       setBlocks((bs) => (bs ?? []).filter((b) => b.id !== id))
     } catch (e) {
-      setError(`Löschen fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`)
+      setError(`Löschen fehlgeschlagen: ${fehlerText(e)}`)
     }
   }
 
@@ -94,7 +95,7 @@ export function Plan(props: {
       }
       await saveMany(copyWeek(alte, vorher, monday))
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(fehlerText(e))
     }
   }
 
