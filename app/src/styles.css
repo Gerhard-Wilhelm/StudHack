@@ -535,6 +535,41 @@ code { font-size: 0.9em; }
 .verdict.ok { color: var(--easy); }
 .verdict.bad { color: var(--rule); }
 
+/* Rechenaufgaben: Zahleneingabe */
+.fields { list-style: none; padding: 0; margin: var(--line) 0 0; display: grid; gap: 14px; }
+.field label .md { font-family: inherit; font-size: 0.95rem; line-height: 1.4; color: var(--muted); }
+.field-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.field input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+}
+.field input:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.field .sign {
+  flex: none;
+  width: 44px;
+  height: 48px;
+  font-size: 1.2rem;
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+}
+.field .unit { flex: none; min-width: 1.5em; color: var(--muted); }
+.field.richtig input { border-color: var(--easy); background: color-mix(in srgb, var(--easy) 12%, var(--card)); }
+.field.falsch input,
+.field.ungueltig input { border-color: var(--rule); background: color-mix(in srgb, var(--rule) 10%, var(--card)); }
+.field-note { margin: 6px 0 0; font-size: 0.9rem; color: var(--rule); font-variant-numeric: tabular-nums; }
+.field.leer .field-note { color: var(--muted); }
+
 .rate.is-suggested { box-shadow: 0 0 0 3px var(--desk), 0 0 0 5px var(--c); }
 .rate.good.is-suggested { box-shadow: 0 0 0 3px var(--desk), 0 0 0 5px var(--ink); }
 
@@ -596,6 +631,20 @@ code { font-size: 0.9em; }
 }
 .draft-mark { flex: none; width: 3.6em; font-size: 0.75rem; color: var(--muted); }
 .draft-choices li.is-correct .draft-mark { color: var(--easy); font-weight: 650; }
+.draft-fields { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.draft-fields li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--easy);
+  background: color-mix(in srgb, var(--easy) 10%, var(--card));
+}
+.draft-fields .md { font-size: 0.95rem; }
+.draft-value { flex: none; font-weight: 650; font-variant-numeric: tabular-nums; }
+.draft-value small { font-weight: 400; color: var(--muted); }
 .draft-answer { color: var(--ink); font-size: 1rem; }
 .draft .source { margin: 8px 0 0; }
 .draft-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }

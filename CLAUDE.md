@@ -42,7 +42,7 @@ Gesamtbild mit Ablaufdiagramm, Datenmodell und Einrichtung in `README.md`,
 Bedienung für Gerhard im Vault unter `00 Kontext/Lernassistent Anleitung.md`.
 
 Bestehend:
-- `config.yaml`: Module, Kurs-IDs, gewählter Klausurtermin (`pruefung`), Vault-Pfad, Anzahl Auswahlfragen
+- `config.yaml`: Module, Kurs-IDs, gewählter Klausurtermin (`pruefung`), Vault-Pfad, Anzahl Auswahlfragen, Rechenaufgaben je Modul an oder aus
 - `scanner/client.py`: API-Zugriff und Anmeldung
 - `scanner/scan.py`: Abgleich, Download, Bericht (Einstiegspunkt)
 - `scanner/auto.py`: täglicher Scan per launchd (07:30) mit macOS-Mitteilung bei neuen Dateien, Protokoll in `logs/` (lokal, nicht im Repository). Einrichten und Abschalten mit `scripts/scan_einrichten.sh` (`--entfernen`)
@@ -52,13 +52,14 @@ Bestehend:
 - `importer/import_notes.py`: Karteikarten und Verständnisfragen aus den Wochennotizen nach Supabase (Standard Trockenlauf, `--schreiben` lädt hoch)
 - `importer/import_lesemodus.py`: Wochennotizen (ohne Karteikarten-Abschnitt) nach Tabelle notes, Modulübersichten (ohne Wochen und Offene Fragen) nach Tabelle modules, eingebettete Folienbilder verkleinert in den privaten Bucket folien (Standard Trockenlauf, `--schreiben` lädt hoch, Bildcache in `cache/folien/`, Tests: `python -m unittest importer.test_import_lesemodus`)
 - `generator/generate_mc.py`: Auswahlfragen (Single Choice, Mehrfachauswahl) aus den Wochennotizen mit Claude Sonnet 5.5, Prüfdurchlauf gegen Notiz und Folientext aus `cache/text/`, Anzahl je Modul in `config.yaml` unter `auswahlfragen`. Ohne Filter nur Auflistung, mit `--notiz`/`--modul` Probelauf mit API, `--schreiben` legt Entwürfe an. Schlüssel `ANTHROPIC_API_KEY` in `.env`. Tests: `python -m unittest generator.test_generate_mc`
+- `generator/generate_rechen.py`: Rechenaufgaben aus dem Abschnitt Übungsaufgaben der Wochennotizen (nur bestehende Aufgaben mit Zahlenergebnis, keine neuen) mit Claude Sonnet 5.5: Rechenweg als Lösung, ein bis vier Eingabefelder mit Sollwert, Toleranz und Einheit (Spalte `eingaben`), Prüfdurchlauf gegen die Lösung in der Notiz. Module mit `rechenaufgaben: false` in `config.yaml` übersprungen (WiPo). Gleiche Schalter wie `generate_mc`. Tests: `python -m unittest generator.test_generate_rechen`
 - `kalender.py`: Lernplan aus der App (Tabelle study_blocks, nur lesend) nach `<Vault>/02 Lernplan/Kalender.md`, läuft beim täglichen Scan und bei `wochenlauf`
-- `wochenlauf.py`: Vorschau und danach Karten-Import, Lesemodus-Import, Auswahlfragen und Kalender in einem Befehl (`python -m wochenlauf`, `--ohne-fragen`, `--ja`)
-- `supabase/migrations/`: Datenmodell (Tabellen items, card_states, reviews, notes, modules mit Klausurtermin, study_blocks, push_subscriptions, push_sent, Bucket folien)
+- `wochenlauf.py`: Vorschau und danach Karten-Import, Lesemodus-Import, Auswahlfragen, Rechenaufgaben und Kalender in einem Befehl (`python -m wochenlauf`, `--ohne-fragen`, `--ja`)
+- `supabase/migrations/`: Datenmodell (Tabellen items, card_states, reviews, notes, modules mit Klausurtermin, study_blocks, items.eingaben für Rechenaufgaben, push_subscriptions, push_sent, Bucket folien)
 - `supabase/functions/erinnerungen/`: Mitteilungen per Web-Push (Blockbeginn, Morgenüberblick, Wiederholungen am Abend, Wochenplan fehlt, neue Entwürfe), alle 5 Minuten per pg_cron (`supabase/zeitplan_erinnerungen.sql`), Regeln in `regeln.ts`, Tests in `app/src/lib/erinnerungen.test.ts`. Secrets VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, CRON_SECRET nur bei Supabase
 - `app/`: PWA (Vite, React, TypeScript). Login, Startseite, Wochenliste je Modul,
   Modulinfo, Wochenansicht mit Notiz, Folienbildern und Mermaid, Lernen mit FSRS
-  inklusive Auswahlfragen, Freigabe-Liste für Entwürfe, Klausur-Countdown,
+  inklusive Auswahlfragen und Rechenaufgaben mit Zahleneingabe, Freigabe-Liste für Entwürfe, Klausur-Countdown,
   neue Karten an die Module mit Lernblock heute (sonst nach Klausurnähe), Module nach der Klausur pausiert,
   Demo-Modus. Schlüssel in `app/.env.local`, Details in `app/README.md`
 
@@ -71,8 +72,8 @@ Geplant:
 1. Der tägliche Scan meldet neue Dateien (oder von Hand: `python -m scanner.scan`).
 2. In einer Sitzung "Verarbeite die neuen Materialien": Claude liest den neuesten Bericht
    in `reports/`, zeigt die geplanten Wochennotizen und schreibt sie nach Gerhards Go.
-3. `python -m wochenlauf`: Karten, Lesemodus und Auswahlfragen in die App.
-4. In der App unter "Entwürfe prüfen" die Auswahlfragen freigeben.
+3. `python -m wochenlauf`: Karten, Lesemodus, Auswahlfragen und Rechenaufgaben in die App.
+4. In der App unter "Entwürfe prüfen" die Auswahl- und Rechenaufgaben freigeben.
 
 ## Lernobjekte
 

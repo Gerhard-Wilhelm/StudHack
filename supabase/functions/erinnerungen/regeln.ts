@@ -172,7 +172,7 @@ export function faelligeMitteilungen(jetzt: Date, lage: Lage, gesendet: Set<stri
       art: 'entwuerfe',
       ref: String(lage.entwuerfe.neuesteId),
       title: 'Neue Entwürfe',
-      body: `${zahl(lage.entwuerfe.anzahl, 'Auswahlfrage wartet', 'Auswahlfragen warten')} auf Freigabe.`,
+      body: `${zahl(lage.entwuerfe.anzahl, 'neue Frage wartet', 'neue Fragen warten')} auf Freigabe.`,
       url: './?ansicht=entwuerfe',
     })
   }

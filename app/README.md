@@ -72,6 +72,26 @@ legt für alle Notizen ohne Fragen Entwürfe an. In der App steht dann auf der
 Startseite "Entwürfe prüfen". Freigegebene Fragen kommen sofort in den
 Lernstapel, die Antworten werden bei jeder Abfrage neu gemischt.
 
+## Rechenaufgaben
+
+Einmalig die Migration `supabase/migrations/20261114120000_rechenaufgaben.sql`
+ausführen (Spalte `eingaben`), und zwar bevor die App mit dieser Version
+gebaut wird, sonst lädt sie keine Karten. Die Aufgaben kommen aus den
+Übungsaufgaben der Wochennotizen:
+
+```bash
+.venv/bin/python -m generator.generate_rechen --notiz "IuF W04"
+.venv/bin/python -m generator.generate_rechen --schreiben
+```
+
+Beim Lernen stehen unter der Frage ein bis vier Eingabefelder. Die App liest
+deutsche und englische Schreibweisen (`1.102,50`, `1102,5`, `5 %`), bei
+Prozentfeldern auch den Anteil (`0,05`). Der Knopf `±` wechselt das Vorzeichen,
+weil die Zahlentastatur am iPhone kein Minus hat. "Prüfen" markiert jedes Feld
+und zeigt bei Fehlern den Sollwert, danach den Rechenweg. Bewertungsvorschlag:
+alles richtig "Gut", teilweise "Schwer", nichts "Nochmal". Ohne Eingabe deckt
+"Lösung zeigen" auf, ohne Vorschlag. Logik in `src/lib/zahlen.ts`.
+
 ## Klausurtermine
 
 Der gewählte Termin je Modul steht in `config.yaml` unter `pruefung` und kommt

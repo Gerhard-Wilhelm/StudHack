@@ -60,7 +60,7 @@ describe('Mitteilungen', () => {
     expect(faelligeMitteilungen(um('2026-11-10', '23:00'), l, new Set())).toEqual([])
     expect(faelligeMitteilungen(um('2026-11-10', '06:55'), l, new Set())).toEqual([])
     const [m] = faelligeMitteilungen(um('2026-11-10', '07:00'), l, new Set())
-    expect(m).toMatchObject({ art: 'entwuerfe', ref: '512', body: '8 Auswahlfragen warten auf Freigabe.' })
+    expect(m).toMatchObject({ art: 'entwuerfe', ref: '512', body: '8 neue Fragen warten auf Freigabe.' })
     expect(faelligeMitteilungen(um('2026-11-10', '12:00'), l, new Set(['entwuerfe|512']))).toEqual([])
   })
 

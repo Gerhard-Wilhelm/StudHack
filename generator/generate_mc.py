@@ -231,7 +231,8 @@ def folienseite(datei: str, seite: int, text_dir: Path = TEXT_DIR) -> str | None
     return None
 
 
-def frage_claude(client, notiz_text: str, aufgabe: str, schema: dict, effort: str, kosten: Kosten) -> dict:
+def frage_claude(client, notiz_text: str, aufgabe: str, schema: dict, effort: str, kosten: Kosten,
+                 system: str = SYSTEM, max_tokens: int = 32000) -> dict:
     """Ein Aufruf mit festem JSON-Format. Ohne Prompt-Cache: Das JSON-Format gehört zum gecachten
     Anfang und ist bei Erzeugen und Prüfen verschieden, der Cache würde nur Schreibaufschlag kosten.
 
@@ -244,10 +245,10 @@ def frage_claude(client, notiz_text: str, aufgabe: str, schema: dict, effort: st
         try:
             with client.beta.messages.stream(
                 model=MODEL,
-                max_tokens=32000,
+                max_tokens=max_tokens,
                 betas=["server-side-fallback-2026-07-01"],
                 fallbacks="default",
-                system=SYSTEM,
+                system=system,
                 output_config={"effort": effort, "format": {"type": "json_schema", "schema": schema}},
                 messages=[{
                     "role": "user",
@@ -317,7 +318,8 @@ def erzeuge(client, notiz, single: int, multiple: int, kosten: Kosten) -> tuple[
 class Generator(Supabase):
     def bearbeitete_notizen(self) -> set[str]:
         r = self._check(self.s.get(f"{self.url}/rest/v1/items", params={
-            "select": "origin_ref", "origin": "eq.generator", "limit": 10000}, timeout=30))
+            "select": "origin_ref", "origin": "eq.generator", "type": "in.(single_choice,multiple_choice)",
+            "limit": 10000}, timeout=30))
         return {row["origin_ref"] for row in r.json()}
 
     def als_entwuerfe(self, fragen: list[Frage]) -> int:

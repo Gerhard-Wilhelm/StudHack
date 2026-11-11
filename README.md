@@ -2,7 +2,7 @@
 
 Persönlicher Lernassistent für das Studium an der MLU Halle: lädt Materialien aus
 Stud.IP, macht daraus mit Claude Wochennotizen in einem Obsidian-Vault und bringt
-Notizen, Karteikarten und Auswahlfragen in eine Lern-App (PWA) mit Spaced
+Notizen, Karteikarten, Auswahlfragen und Rechenaufgaben in eine Lern-App (PWA) mit Spaced
 Repetition. Die Bedienungsanleitung steht im Vault unter
 `00 Kontext/Lernassistent Anleitung.md`, die Regeln für Claude in `CLAUDE.md`.
 
@@ -14,7 +14,7 @@ flowchart LR
   A -->|Claude-Sitzung, nach Go| N[Wochennotizen<br/>und Modulübersichten]
   N -->|import_notes| I[(items, card_states)]
   N -->|import_lesemodus| L[(notes, modules,<br/>Bucket folien)]
-  N -->|generate_mc, Claude API| E[(items als Entwurf)]
+  N -->|generate_mc, generate_rechen,<br/>Claude API| E[(items als Entwurf)]
   E -->|Freigabe in der App| I
   I --> P[App auf Cloudflare Pages]
   L --> P
@@ -33,10 +33,11 @@ flowchart LR
 | Karten-Importer | `importer/import_notes.py` | Karteikarten (`Frage::Antwort`) und Verständnisfragen (fette Frage plus `> [!question]-` Callout) nach `items` (Status freigegeben) und `card_states`. Erkennt Karten am Hash von Modul, Typ und Frage |
 | Lesemodus-Importer | `importer/import_lesemodus.py` | Wochennotizen ohne Karteikarten-Abschnitt nach `notes`, Modulübersichten ohne Wochen und Offene Fragen nach `modules` (mit Klausurtermin aus `config.yaml`), eingebettete Folienbilder als JPEG (max. 1400 px) in den privaten Bucket `folien` |
 | Generator | `generator/generate_mc.py` | Auswahlfragen mit Claude Sonnet 5.5, zweiter Aufruf prüft jede Frage gegen Notiz und Folientext, legt Bestandenes als Entwurf an. Gestreamt, mit Wiederholung bei Verbindungsabbruch |
+| Rechenaufgaben | `generator/generate_rechen.py` | übernimmt die Übungsaufgaben mit Zahlenergebnis aus den Wochennotizen samt Rechenweg, legt Eingabefelder mit Sollwert und Toleranz fest, zweiter Aufruf prüft jeden Sollwert gegen die Lösung in der Notiz. Keine neuen Aufgaben |
 | Wochenbefehl | `wochenlauf.py` | Vorschau (nur lesend), dann Karten-Importer, Lesemodus-Importer, Generator, Kalender |
 | Kalender | `kalender.py` | Liest die Lernblöcke aus `study_blocks` (nur lesend) und schreibt `<Vault>/02 Lernplan/Kalender.md`, läuft beim täglichen Scan und bei `wochenlauf` |
 | Mitteilungen | `supabase/functions/erinnerungen/` | Edge Function, alle 5 Minuten per pg_cron: Web-Push an die angemeldeten Geräte (Blockbeginn, Morgenüberblick, offene Wiederholungen, Wochenplan fehlt, neue Entwürfe), Ruhezeit 22 bis 7 Uhr, keine Doppelmeldungen |
-| App | `app/` | Vite, React, TypeScript. Login, Startseite mit Klausur-Countdown, Lernplan mit verschiebbaren Blöcken, Wochenliste, Lesemodus, Lernen mit FSRS (ts-fsrs), Auswahlfragen, Freigabe-Liste, Demo-Modus. Details in `app/README.md` |
+| App | `app/` | Vite, React, TypeScript. Login, Startseite mit Klausur-Countdown, Lernplan mit verschiebbaren Blöcken, Wochenliste, Lesemodus, Lernen mit FSRS (ts-fsrs), Auswahlfragen, Rechenaufgaben mit Zahleneingabe, Freigabe-Liste, Demo-Modus. Details in `app/README.md` |
 
 Importer und Generator schreiben nur mit `--schreiben`, ohne die Option ist es ein
 Trockenlauf (der Generator ruft mit `--notiz` oder `--modul` trotzdem die API auf).
@@ -45,7 +46,7 @@ Trockenlauf (der Generator ruft mit `--notiz` oder `--modul` trotzdem die API au
 
 | Tabelle | Inhalt | Schreibt | Liest |
 |---|---|---|---|
-| `items` | Lernobjekte: Typ, Frage, Antwort, Optionen, Quelle, Modul, Woche, Status | Karten-Importer, Generator (Entwürfe), App (Freigabe) | App |
+| `items` | Lernobjekte: Typ, Frage, Antwort, Optionen, Eingabefelder (Rechenaufgaben), Quelle, Modul, Woche, Status | Karten-Importer, Generator (Entwürfe), App (Freigabe) | App |
 | `card_states` | FSRS-Zustand je Lernobjekt | Importer und Generator (Anlage), App | App |
 | `reviews` | jede Bewertung | App | |
 | `notes` | Wochennotizen als Markdown | Lesemodus-Importer | App |
@@ -71,6 +72,7 @@ Migrationen in `supabase/migrations/`, in dieser Reihenfolge im SQL Editor ausf�
 6. `20261111120000_lernplan.sql`: study_blocks
 7. `20261112120000_mitteilungen.sql`: push_subscriptions, push_sent
 8. `20261113120000_mitteilungen_rechte.sql`: Leserechte der Edge Function erinnerungen
+9. `20261114120000_rechenaufgaben.sql`: Spalte eingaben in items
 
 ## Einrichtung von null
 
@@ -106,6 +108,7 @@ chmod 600 .env
 | `module.<Kürzel>.kurse` | Stud.IP-Kurs-IDs (`scanner.scan --list-courses`) |
 | `module.<Kürzel>.pruefung` | gewählter Klausurtermin (YYYY-MM-DD) |
 | `module.<Kürzel>.auswahlfragen` | eigene Anzahl Auswahlfragen für das Modul |
+| `module.<Kürzel>.rechenaufgaben` | `false` schaltet Rechenaufgaben für das Modul ab |
 
 ## Befehle
 
@@ -116,6 +119,7 @@ chmod 600 .env
 .venv/bin/python -m scanner.scan                  # neue Dateien laden
 .venv/bin/python -m wochenlauf                    # Wochennotizen in die App
 .venv/bin/python -m generator.generate_mc --notiz "MAK W03"   # Probelauf einer Notiz
+.venv/bin/python -m generator.generate_rechen --notiz "IuF W04"   # Rechenaufgaben, Probelauf
 scripts/scan_einrichten.sh                        # täglichen Scan einrichten
 launchctl kickstart -k gui/$(id -u)/de.studhack.scan          # Scan sofort starten
 ```
@@ -125,7 +129,7 @@ Alle Befehle der Importer und des Generators stehen in ihren Kopfkommentaren.
 ## Tests
 
 ```bash
-.venv/bin/python -m unittest importer.test_import_lesemodus generator.test_generate_mc scanner.test_auto test_wochenlauf test_kalender
+.venv/bin/python -m unittest importer.test_import_lesemodus generator.test_generate_mc generator.test_generate_rechen scanner.test_auto test_wochenlauf test_kalender
 cd app && npm test && npm run build
 ```
 

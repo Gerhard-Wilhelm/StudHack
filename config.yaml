@@ -11,6 +11,9 @@ auswahlfragen:
   single: 4
   multiple: 2
 
+# Rechenaufgaben (generator/generate_rechen.py) gibt es für alle Module außer denen
+# mit "rechenaufgaben: false".
+
 # Module mit ihren Stud.IP Kurs-IDs (Vorlesung, Übung, ...) und dem gewählten
 # Klausurtermin (pruefung, siehe Vault 00 Kontext/Prüfungstermine)
 # Kurs-IDs aller belegten Kurse zeigt: python -m scanner.scan --list-courses
@@ -57,6 +60,7 @@ module:
     name: Wirtschaftspolitik
     pruefung: 2027-02-15  # gewählter Klausurtermin
     auswahlfragen: {single: 2, multiple: 4}  # Klausur mit Multiple Choice
+    rechenaufgaben: false  # kaum Aufgaben mit Zahlenergebnis
     kurse:
       - 566c5d99604d8895bce97b1e5f24b254  # Vorlesung
       - c996c0eb0a08c74ee101f2201f15e2f9  # Übung Ü6

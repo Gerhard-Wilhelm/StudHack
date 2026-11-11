@@ -5,6 +5,7 @@ import { correctSet, evaluate, isChoice, shuffledOrder } from '../lib/choice'
 import { preview, rate } from '../lib/fsrs'
 import { advance } from '../lib/queue'
 import type { Grade, ItemType, ReviewRecord, StudyCard } from '../lib/types'
+import { pruefe, vorschlag, zeigeZahl } from '../lib/zahlen'
 
 export const TYPE_LABEL: Record<ItemType, string> = {
   karteikarte: 'Karteikarte',
@@ -22,6 +23,7 @@ export function Study(props: {
   const [queue, setQueue] = useState(props.initial)
   const [revealed, setRevealed] = useState(false)
   const [selected, setSelected] = useState<number[]>([])
+  const [werte, setWerte] = useState<string[]>([])
   const [done, setDone] = useState(0)
   const shownAt = useRef(Date.now())
   const card = queue[0]
@@ -34,7 +36,10 @@ export function Study(props: {
   // Neu gemischt bei jeder Vorlage, auch wenn eine Karte nach "Nochmal" wiederkommt
   const order = useMemo(() => shuffledOrder(choices.length), [card])
   const result = choice && revealed ? evaluate(selected, correctSet(card!.item), choices.length) : null
-  const suggested: Grade | undefined = result ? (result.ok ? 3 : 1) : undefined
+  const felder = card?.item.type === 'rechenaufgabe' ? card.item.eingaben ?? [] : []
+  const rechen = felder.length > 0
+  const status = rechen && revealed ? felder.map((f, i) => pruefe(werte[i] ?? '', f)) : null
+  const suggested: Grade | undefined = result ? (result.ok ? 3 : 1) : status ? vorschlag(status) : undefined
 
   useEffect(() => {
     shownAt.current = Date.now()
@@ -58,6 +63,7 @@ export function Study(props: {
     setDone((d) => d + 1)
     setRevealed(false)
     setSelected([])
+    setWerte([])
     setQueue((q) => advance(q, { item: card.item, state }, grade === 1))
   }
 
@@ -76,6 +82,8 @@ export function Study(props: {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (!card) return
+      // Beim Tippen in ein Eingabefeld zählen Leertaste und Ziffern nicht als Befehl
+      if (e.target instanceof HTMLInputElement && e.key !== 'Enter') return
       if (!revealed && (e.key === ' ' || e.key === 'Enter')) {
         e.preventDefault()
         setRevealed(true)
@@ -115,7 +123,7 @@ export function Study(props: {
 
       <article
         className={`card ${revealed ? 'is-revealed' : ''}`}
-        onClick={() => !revealed && !choice && setRevealed(true)}
+        onClick={() => !revealed && !choice && !rechen && setRevealed(true)}
       >
         <div className="card-head">
           <span>{item.module}{item.week ? `, Woche ${item.week}` : ''}</span>
@@ -157,6 +165,69 @@ export function Study(props: {
           </>
         )}
 
+        {rechen && (
+          <>
+            <ol className="fields">
+              {felder.map((f, i) => {
+                const st = status?.[i]
+                const id = `feld-${item.id}-${i}`
+                return (
+                  <li key={i} className={`field ${st ?? ''}`}>
+                    <label htmlFor={id}><Markdown text={f.label} /></label>
+                    <div className="field-row">
+                      <button
+                        type="button"
+                        className="sign"
+                        aria-label="Vorzeichen wechseln"
+                        disabled={revealed}
+                        onClick={() => setWerte((w) => {
+                          const n = [...w]
+                          const v = (n[i] ?? '').trim()
+                          n[i] = v.startsWith('-') ? v.slice(1) : `-${v}`
+                          return n
+                        })}
+                      >
+                        ±
+                      </button>
+                      <input
+                        id={id}
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        enterKeyHint={i === felder.length - 1 ? 'done' : 'next'}
+                        value={werte[i] ?? ''}
+                        disabled={revealed}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          setWerte((w) => {
+                            const n = [...w]
+                            n[i] = v
+                            return n
+                          })
+                        }}
+                      />
+                      {f.einheit && <span className="unit">{f.einheit}</span>}
+                    </div>
+                    {st && st !== 'richtig' && (
+                      <p className="field-note">
+                        {st === 'ungueltig' ? 'Keine Zahl erkannt. ' : st === 'leer' ? '' : 'Falsch. '}
+                        Lösung: {zeigeZahl(f.wert, f.einheit)}
+                      </p>
+                    )}
+                  </li>
+                )
+              })}
+            </ol>
+            {status && status.some((x) => x !== 'leer') && (
+              <p className={`verdict ${status.every((x) => x === 'richtig') ? 'ok' : 'bad'}`} role="status">
+                {status.every((x) => x === 'richtig')
+                  ? 'Richtig.'
+                  : `${status.filter((x) => x === 'richtig').length} von ${status.length} richtig.`}
+              </p>
+            )}
+          </>
+        )}
+
         {revealed && (
           <div className="answer">
             <Markdown text={item.answer} />
@@ -173,7 +244,7 @@ export function Study(props: {
       <footer className="dock">
         {revealed && intervals ? (
           <RatingBar now={now} preview={intervals} onRate={onRate} suggested={suggested} />
-        ) : multi && selected.length > 0 ? (
+        ) : (multi && selected.length > 0) || (rechen && werte.some((w) => w?.trim())) ? (
           <button className="primary big" onClick={() => setRevealed(true)}>Prüfen</button>
         ) : (
           <button className="primary big" onClick={() => setRevealed(true)}>
