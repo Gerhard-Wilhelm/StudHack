@@ -110,3 +110,11 @@ export function dailyQuota(
   const weights = Object.fromEntries(Object.keys(available).map((m) => [m, urgency(exams[m], now)]))
   return allocateNew(available, weights, limit)
 }
+
+export type Dringlichkeit = 'fern' | 'nah' | 'knapp'
+
+/** Farbe des Countdowns: mehr als 4 Wochen fern, 2 bis 4 Wochen nah, unter 2 Wochen knapp. */
+export function dringlichkeit(examDate: string, now: Date): Dringlichkeit {
+  const n = daysUntil(examDate, now)
+  return n < 14 ? 'knapp' : n <= 28 ? 'nah' : 'fern'
+}

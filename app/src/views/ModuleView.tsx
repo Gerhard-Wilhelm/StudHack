@@ -63,17 +63,14 @@ export function ModuleView(props: {
                   {w.note?.title ?? (w.week ? 'Noch keine Zusammenfassung' : 'Ohne Woche')}
                 </span>
                 <span className="module-counts">
-                  <span className="count due" aria-label={`${w.counts.due} fällig`}>{w.counts.due}</span>
-                  <span className="count fresh" aria-label={`${w.counts.fresh} ungelernt`}>{w.counts.fresh}</span>
+                  <span className="count due">{w.counts.due}<small>fällig</small></span>
+                  <span className="count fresh">{w.counts.fresh}<small>neu</small></span>
                 </span>
               </button>
             </li>
           ))}
         </ul>
       )}
-      <p className="legend">
-        <span className="count due">fällig</span> <span className="count fresh">ungelernt</span>
-      </p>
 
       <footer className="dock">
         <button className="primary big" disabled={total === 0} onClick={props.onStudy}>
