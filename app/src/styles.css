@@ -24,6 +24,9 @@
   color-scheme: light dark;
 }
 
+/* Modulfarbe: --m setzt die Ansicht (Farbe aus dem Lernplan), --mc ist die lesbare Fassung */
+* { --mc: var(--m, var(--ink)); }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --desk: #11141a;
@@ -39,6 +42,7 @@
     --edge: #2b3340;
     --shadow: 0 1px 0 #0a0c10, 0 10px 28px -14px rgba(0, 0, 0, 0.7);
   }
+  * { --mc: color-mix(in srgb, var(--m, var(--ink)) 55%, #fff); }
 }
 
 * { box-sizing: border-box; }
@@ -79,6 +83,33 @@ button:disabled { cursor: default; }
 }
 
 /* Kopfzeile ------------------------------------------------------------- */
+
+/* Streifen hinter Uhr und Akku, damit beim Scrollen kein Text darunter durchläuft */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  z-index: 9;
+  background: color-mix(in srgb, var(--desk) 92%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Kopfzeile mit Zurück bleibt oben stehen, außer auf der Startseite (großer Titel) und beim Lernen */
+.page:not(.home):not(.study) > .bar {
+  position: sticky;
+  top: env(safe-area-inset-top);
+  z-index: 8;
+  margin: 0 calc(-1 * var(--gutter)) 8px;
+  padding: 0 var(--gutter);
+  background: color-mix(in srgb, var(--desk) 92%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 var(--edge);
+}
 
 .bar {
   display: flex;
@@ -181,13 +212,14 @@ code { font-size: 0.9em; }
   padding: 0 16px;
   background: var(--card);
   border: 1px solid var(--edge);
-  border-left: 4px solid var(--ink);
+  border-left: 6px solid var(--mc);
   text-align: left;
 }
 .modules li:first-child .module { border-top-right-radius: 14px; }
 .modules li:last-child .module { border-bottom-right-radius: 14px; }
 .module.is-empty { border-left-color: var(--edge); }
-.module-name { font-family: var(--serif); font-size: 1.15rem; font-weight: 600; }
+.module-name { font-family: var(--serif); font-size: 1.15rem; font-weight: 600; color: var(--mc); }
+.module.is-empty .module-name { color: var(--text); }
 .module-counts { display: flex; gap: 14px; }
 
 .count { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 2ch; text-align: right; }
@@ -213,8 +245,15 @@ code { font-size: 0.9em; }
   border-radius: 6px;
   box-shadow: var(--shadow);
   padding: 0 18px calc(var(--line) * 1.5);
-  min-height: calc(100dvh - var(--dock-h) - env(safe-area-inset-top) - 110px);
 }
+/* Die Karte ist so hoch wie ihr Inhalt und sitzt näher am Daumen */
+.study .card { margin-top: clamp(8px, 7vh, 64px); }
+.tap-hint { margin: 12px 0 0; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+/* Fortschritt der Sitzung in der Modulfarbe der aktuellen Karte */
+.progress { height: 4px; border-radius: 2px; background: var(--edge); overflow: hidden; margin: -4px 0 8px; }
+.progress > span { display: block; height: 100%; background: var(--mc); transition: width 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .progress > span { transition: none; } }
 
 .card-head {
   display: flex;
@@ -224,10 +263,11 @@ code { font-size: 0.9em; }
   align-items: flex-end;
   margin: 0 -18px;
   padding: 0 18px 8px;
-  border-bottom: 2px solid var(--rule);
+  border-bottom: 2px solid var(--mc);
   color: var(--muted);
   font-size: 0.85rem;
 }
+.card-head > :first-child { color: var(--mc); font-weight: 600; }
 
 .md { font-family: var(--serif); font-size: 1.15rem; line-height: var(--line); }
 .md p, .md ul, .md ol, .md table { margin: 0 0 var(--line); }
@@ -353,7 +393,7 @@ code { font-size: 0.9em; }
   padding: 10px 16px;
   background: var(--card);
   border: 1px solid var(--edge);
-  border-left: 4px solid var(--ink);
+  border-left: 4px solid var(--mc);
   text-align: left;
 }
 .weeks li:first-child .week { border-top-right-radius: 14px; }
@@ -477,7 +517,7 @@ code { font-size: 0.9em; }
   text-overflow: ellipsis;
 }
 
-.module-view .title { margin-bottom: 4px; }
+.module-view .title { margin-bottom: 4px; color: var(--mc); }
 .module-fullname { font-family: var(--serif); font-size: 1.2rem; color: var(--muted); margin: 0 0 16px; }
 
 .info-row {

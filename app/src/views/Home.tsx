@@ -9,6 +9,8 @@ function plural(n: number, one: string, many: string) {
 
 export function Home(props: {
   overview: Overview
+  /** Farben der Module aus dem Lernplan */
+  colors?: Record<string, string>
   names: Record<string, string>
   exams: Record<string, string>
   now: Date
@@ -83,6 +85,7 @@ export function Home(props: {
               <li key={m.module}>
                 <button
                   className={`module ${empty ? 'is-empty' : ''} ${m.written ? 'is-written' : ''}`}
+                  style={{ '--m': props.colors?.[m.module] } as CSSProperties}
                   onClick={() => props.onOpenModule(m.module)}
                 >
                   <span className="module-label">

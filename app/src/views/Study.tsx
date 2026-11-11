@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Markdown } from '../components/Markdown'
 import { RatingBar } from '../components/RatingBar'
 import { correctSet, evaluate, isChoice, shuffledOrder } from '../lib/choice'
@@ -17,6 +17,8 @@ export const TYPE_LABEL: Record<ItemType, string> = {
 
 export function Study(props: {
   initial: StudyCard[]
+  /** Farben der Module aus dem Lernplan */
+  colors?: Record<string, string>
   onReview: (r: ReviewRecord, wasNew: boolean) => void
   onExit: () => void
 }) {
@@ -27,6 +29,9 @@ export function Study(props: {
   const [done, setDone] = useState(0)
   const shownAt = useRef(Date.now())
   const card = queue[0]
+  // Fortschritt nach Karten, nicht nach Durchgängen: Eine Karte nach "Nochmal" zählt nicht doppelt
+  const gesamt = useMemo(() => new Set(props.initial.map((c) => c.item.id)).size, [props.initial])
+  const fertig = gesamt - new Set(queue.map((c) => c.item.id)).size
   const now = useMemo(() => new Date(), [card, revealed])
   const intervals = useMemo(() => (card ? preview(card.state, now) : null), [card, now])
 
@@ -113,13 +118,17 @@ export function Study(props: {
   }
 
   const { item } = card
+  const farbe = { '--m': props.colors?.[item.module] } as CSSProperties
 
   return (
-    <main className="page study">
+    <main className="page study" style={farbe}>
       <header className="bar">
         <button className="link" onClick={props.onExit}>Beenden</button>
-        <span className="remaining" aria-live="polite">noch {queue.length}</span>
+        <span className="remaining" aria-live="polite">{fertig} von {gesamt}</span>
       </header>
+      <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={gesamt} aria-valuenow={fertig}>
+        <span style={{ width: `${gesamt ? (fertig / gesamt) * 100 : 0}%` }} />
+      </div>
 
       <article
         className={`card ${revealed ? 'is-revealed' : ''}`}
@@ -240,6 +249,7 @@ export function Study(props: {
           </div>
         )}
       </article>
+      {!revealed && !choice && !rechen && <p className="tap-hint">Tippen zum Aufdecken</p>}
 
       <footer className="dock">
         {revealed && intervals ? (

@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { daysUntil, formatDate, formatExam } from '../lib/exams'
 import type { Counts } from '../lib/queue'
 import type { ModuleInfo, NoteSummary } from '../lib/types'
@@ -10,6 +11,8 @@ export interface WeekRow {
 
 export function ModuleView(props: {
   module: string
+  /** Farbe des Moduls aus dem Lernplan */
+  color?: string
   info?: ModuleInfo
   now: Date
   weeks: WeekRow[]
@@ -26,7 +29,7 @@ export function ModuleView(props: {
   const total = due + Math.min(fresh, props.newLimit)
 
   return (
-    <main className="page module-view">
+    <main className="page module-view" style={{ '--m': props.color } as CSSProperties}>
       <header className="bar">
         <button className="link" onClick={props.onBack}>Zurück</button>
       </header>
