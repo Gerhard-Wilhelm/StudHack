@@ -310,11 +310,12 @@ export function App() {
     body = <main className="page center"><p className="lead">Lade Karten</p></main>
   } else if (view.name === 'study') {
     const back = view.back
-    body = <Study initial={view.queue} onReview={onReview} onExit={() => setView(back)} />
+    body = <Study initial={view.queue} colors={colors} onReview={onReview} onExit={() => setView(back)} />
   } else if (view.name === 'module') {
     body = (
       <ModuleView
         module={view.module}
+        color={colors[view.module]}
         info={modules.find((m) => m.module === view.module)}
         now={now}
         weeks={weekRows(view.module)}
@@ -386,6 +387,7 @@ export function App() {
       <Home
         overview={ov}
         names={moduleNames}
+        colors={colors}
         exams={exams}
         now={now}
         pending={pending}
