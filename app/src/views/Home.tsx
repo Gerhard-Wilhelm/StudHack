@@ -81,8 +81,8 @@ export function Home(props: {
 
       <p className="summary">
         {nothing
-          ? 'Für heute ist alles erledigt.'
-          : `Insgesamt ${plural(total.due, 'Wiederholung', 'Wiederholungen')} und ${plural(total.fresh, 'neue Karte', 'neue Karten')}.`}
+          ? 'Für heute ist alles erledigt'
+          : `Insgesamt ${plural(total.due, 'Wiederholung', 'Wiederholungen')} und ${plural(total.fresh, 'neue Karte', 'neue Karten')}`}
       </p>
 
       {props.drafts > 0 && (

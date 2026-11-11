@@ -1,8 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#000"/>
+  <defs>
+    <!-- Dunkelgrau mit sanftem Verlauf wie andere dunkle iOS-Icons, nicht reines Schwarz -->
+    <linearGradient id="grund" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#333334"/>
+      <stop offset="1" stop-color="#151516"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#grund)"/>
   <g transform="rotate(-8 256 256)">
-    <rect x="118" y="168" width="276" height="188" rx="18" fill="#000" stroke="#fff" stroke-opacity=".55" stroke-width="12"/>
+    <rect x="118" y="168" width="276" height="188" rx="18" fill="#0d0d0e" stroke="#fff" stroke-opacity=".55" stroke-width="12"/>
   </g>
-  <rect x="118" y="150" width="276" height="188" rx="18" fill="#000" stroke="#fff" stroke-width="12"/>
+  <rect x="118" y="150" width="276" height="188" rx="18" fill="#0d0d0e" stroke="#fff" stroke-width="12"/>
   <path d="M206 246 l36 34 l66 -68" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
