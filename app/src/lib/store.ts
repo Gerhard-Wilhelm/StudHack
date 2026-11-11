@@ -27,4 +27,8 @@ export interface Store {
   loadModules(): Promise<ModuleInfo[]>
   /** Adressen für Folienbilder, Schlüssel wie in der Notiz (<Kürzel>/<Bild>.jpg). */
   resolveImages(paths: string[]): Promise<Record<string, string>>
+  /** Offline-Modus: alle Notizen im Hintergrund auf dem Gerät speichern, höchstens einmal am Tag. */
+  vorladen?(): Promise<void>
+  /** Offline-Modus: alle Folienbilder laden, damit der Service Worker sie speichert. Gibt die Anzahl zurück. */
+  bilderVorladen?(fortschritt: (fertig: number, gesamt: number) => void): Promise<number>
 }

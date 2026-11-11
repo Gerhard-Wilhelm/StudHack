@@ -62,6 +62,7 @@ export function App() {
   const [pending, setPending] = useState(0)
   const [tick, setTick] = useState(0)
   const [loaded, setLoaded] = useState(0)
+  const [online, setOnline] = useState(() => navigator.onLine)
   // Link aus einer Mitteilung: ?lernen=BIL, ?lernen=alle, ?ansicht=plan&woche=naechste, ?ansicht=entwuerfe
   const [link, setLink] = useState(() => new URLSearchParams(window.location.search))
 
@@ -110,7 +111,26 @@ export function App() {
       setModules([])
     }
     setLoaded((n) => n + 1)
+    // Offline-Modus: alle Notizen im Hintergrund aufs Gerät, höchstens einmal am Tag
+    void store.vorladen?.().catch(() => undefined)
   }, [store])
+
+  // Netz weg oder wieder da: Hinweis zeigen, danach Warteliste senden und neu laden
+  useEffect(() => {
+    function onOnline() {
+      setOnline(true)
+      void load()
+    }
+    function onOffline() {
+      setOnline(false)
+    }
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
+  }, [load])
 
   useEffect(() => {
     setCards(null)
@@ -242,7 +262,11 @@ export function App() {
     setView({ name: 'home' })
   }
 
-  const demoBand = store?.kind === 'demo' && <div className="demo-band">Demo</div>
+  const demoBand = store?.kind === 'demo' ? (
+    <div className="demo-band">Demo</div>
+  ) : !online ? (
+    <div className="demo-band offline-band" role="status">Offline</div>
+  ) : null
 
   if (!authChecked) return <main className="page center"><p className="lead">Lade</p></main>
 
@@ -264,6 +288,7 @@ export function App() {
         demo={store.kind === 'demo'}
         written={written.map((m) => ({ module: m, name: moduleNames[m], active: reactivated.includes(m) }))}
         onToggleWritten={toggleReactivated}
+        bilderVorladen={store.bilderVorladen?.bind(store)}
         onBack={() => setView({ name: 'home' })}
         onLogout={logout}
         onResetDemo={() => {

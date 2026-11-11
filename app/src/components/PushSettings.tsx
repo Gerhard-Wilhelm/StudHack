@@ -3,6 +3,7 @@ import {
   ALLE_AN, ARTEN, ladePrefs, pushAusschalten, pushEinschalten, pushStatus, speicherePrefs, testmitteilung,
   type Art, type Prefs, type PushStatus,
 } from '../lib/push'
+import { fehlerText } from '../lib/offline'
 
 const HINWEIS: Partial<Record<PushStatus, string>> = {
   'kein-supabase': 'Mitteilungen gehen nur mit Anmeldung.',
@@ -10,10 +11,6 @@ const HINWEIS: Partial<Record<PushStatus, string>> = {
   'nicht-installiert': 'Mitteilungen gehen auf dem iPhone nur, wenn die App vom Home-Bildschirm geöffnet ist.',
   'nicht-unterstuetzt': 'Dieser Browser unterstützt keine Mitteilungen.',
   verweigert: 'Mitteilungen sind blockiert. Erlauben unter iOS-Einstellungen, Mitteilungen, Lernkartei.',
-}
-
-function text(e: unknown) {
-  return e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String(e.message) : String(e)
 }
 
 export function PushSettings() {
@@ -41,7 +38,7 @@ export function PushSettings() {
     try {
       await f()
     } catch (e) {
-      setMeldung(text(e))
+      setMeldung(fehlerText(e))
     } finally {
       setBusy(false)
     }

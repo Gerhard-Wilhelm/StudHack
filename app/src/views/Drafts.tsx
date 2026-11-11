@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Markdown } from '../components/Markdown'
 import { correctSet, isChoice } from '../lib/choice'
+import { fehlerText } from '../lib/offline'
 import type { Item } from '../lib/types'
 import { zeigeZahl } from '../lib/zahlen'
 import { TYPE_LABEL } from './Study'
@@ -29,7 +30,7 @@ export function Drafts(props: {
     try {
       await props.onDecide(ids, status)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(fehlerText(e))
     } finally {
       setBusy((b) => new Set([...b].filter((id) => !ids.includes(id))))
     }
