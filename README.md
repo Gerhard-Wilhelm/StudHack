@@ -1,9 +1,6 @@
 <h1 align="center">./StudHack</h1>
 
-<p align="center">
-  Stud.IP-Material, Wochennotizen mit Claude und Spaced Repetition am Handy<br>
-  Stud.IP material, weekly notes by Claude and spaced repetition on your phone
-</p>
+<p align="center"><em>Der Shortcut durchs Semester.</em></p>
 
 <p align="center">
   <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/English-6b7280?style=for-the-badge"></a>

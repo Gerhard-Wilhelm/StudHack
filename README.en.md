@@ -5,6 +5,8 @@
 
 # ./StudHack
 
+*The shortcut through your semester.*
+
 A study assistant for university: it downloads course material from Stud.IP,
 turns it into weekly notes in an Obsidian vault with Claude, and brings notes,
 flashcards, multiple choice questions and calculation tasks into a study app (PWA)
