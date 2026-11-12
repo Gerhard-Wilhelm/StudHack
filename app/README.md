@@ -108,6 +108,18 @@ Tippen öffnet das Menü, lange drücken und ziehen verschiebt. Vorschlag nach
 Klausurnähe oder Vorwoche übernehmen. Gespeichert in `study_blocks` (Migration
 `20261111120000_lernplan.sql`), `kalender.py` schreibt den Plan in den Vault.
 
+## Einstellungen und Modulfarben
+
+Die Einstellungen sind in Reiter geteilt: Lernen, Module, Mitteilungen,
+Offline und Konto (Mitteilungen und Offline nur mit Anmeldung). Der zuletzt
+geöffnete Reiter wird auf dem Gerät gemerkt.
+
+Unter "Module" bekommt jedes Modul eine von 12 Farben (`src/lib/farben.ts`)
+oder die automatische aus dem Lernplan. Gespeichert in der Tabelle
+`module_colors` (Migration `20261115120000_modulfarben.sql`), damit sie auf
+allen Geräten gilt, zwischengespeichert für offline. Ohne Tabelle nutzt die App
+die automatischen Farben. In der Demo liegen die Farben im Gerätespeicher.
+
 ## Offline-Modus
 
 Ohne Netz startet die App aus dem Zwischenspeicher des Service Workers

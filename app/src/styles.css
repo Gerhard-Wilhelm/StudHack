@@ -354,7 +354,65 @@ code { font-size: 0.9em; }
 /* Einstellungen --------------------------------------------------------- */
 
 .setting { margin: 24px 0; display: flex; flex-direction: column; gap: 10px; }
-.setting > label { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; }
+.setting > label { font-family: var(--sans); font-size: 1.1rem; font-weight: 650; }
+
+/* Reiter der Einstellungen: bei schmalem Bildschirm seitlich wischbar */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin: 4px 0 8px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 1 0 auto;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tab.is-active { background: var(--desk); color: var(--text); font-weight: 650; box-shadow: 0 0 0 1px var(--edge); }
+
+/* Modulfarben */
+.color-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.color-row { background: var(--card); border: 1px solid var(--edge); border-radius: 12px; }
+.color-head {
+  width: 100%;
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+}
+.color-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--mc); }
+.color-name { font-weight: 650; }
+.color-sub { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.color-state { color: var(--muted); font-size: 0.75rem; }
+.swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; padding: 4px 14px 14px; }
+.swatch {
+  aspect-ratio: 1;
+  min-height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--mc);
+}
+.swatch[aria-pressed='true'] { outline: 3px solid var(--text); outline-offset: 2px; }
+.swatch-reset { grid-column: 1 / -1; justify-self: start; padding: 4px 0 0; }
 .stepper { display: flex; align-items: stretch; gap: 8px; }
 .stepper button {
   width: 56px;
