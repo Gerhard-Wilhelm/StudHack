@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { dringlichkeit, formatExam } from '../lib/exams'
+import { useKuerzel } from '../lib/kuerzel'
 import { dauerText, naechsterBlock, type StudyBlock } from '../lib/plan'
 import type { Overview } from '../lib/queue'
 
@@ -42,6 +43,7 @@ export function Home(props: {
   onOpenModule: (module: string) => void
   onSettings: () => void
 }) {
+  const kurz = useKuerzel()
   const { total, modules } = props.overview
   const nothing = total.due + total.fresh === 0
   const naechster = naechsterBlock(props.today, props.now)
@@ -63,13 +65,13 @@ export function Home(props: {
             {naechster.laeuft ? `Läuft jetzt, noch ${dauerText(naechster.minuten)}` : `Nächster Lernblock, in ${dauerText(naechster.minuten)}`}
           </p>
           <p className="next-title">
-            {naechster.block.module} {naechster.block.start_time} bis {props.today.find((b) => b.id === naechster.block.id)?.end}
+            {kurz(naechster.block.module)} {naechster.block.start_time} bis {props.today.find((b) => b.id === naechster.block.id)?.end}
           </p>
           <p className="next-sub">
             {[props.names[naechster.block.module], blockZahlen && `${blockZahlen.due} fällig, ${blockZahlen.fresh} neu`].filter(Boolean).join(', ')}
           </p>
           <button className="next-button" onClick={() => props.onStudyModule(naechster.block.module)}>
-            {naechster.block.module} lernen
+            {kurz(naechster.block.module)} lernen
           </button>
         </section>
       ) : (
@@ -115,7 +117,7 @@ export function Home(props: {
                   onClick={() => props.onOpenModule(m.module)}
                 >
                   <span className="module-label">
-                    <span className="module-name">{m.module}</span>
+                    <span className="module-name">{kurz(m.module)}</span>
                     {name && <span className="module-sub">{name}</span>}
                     {exam && (
                       <span className={`module-exam ${m.written ? 'is-past' : dringlichkeit(props.exams[m.module], props.now)}`}>{exam}</span>

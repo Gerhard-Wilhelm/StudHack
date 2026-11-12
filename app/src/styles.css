@@ -390,7 +390,7 @@ code { font-size: 0.9em; }
   width: 100%;
   min-height: 52px;
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto auto 1fr;
   align-items: center;
   gap: 10px;
   padding: 0 14px;
@@ -402,7 +402,20 @@ code { font-size: 0.9em; }
 .color-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--mc); }
 .color-name { font-weight: 650; }
 .color-sub { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.color-state { color: var(--muted); font-size: 0.75rem; }
+.kuerzel-feld { display: flex; align-items: center; gap: 12px; padding: 2px 14px 12px; }
+.kuerzel-feld span { color: var(--muted); font-size: 0.85rem; }
+.kuerzel-feld input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--edge);
+  background: var(--desk);
+  font-size: 17px;
+  font-weight: 650;
+}
+.kuerzel-feld input::placeholder { color: var(--muted); font-weight: 500; }
 .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; padding: 4px 14px 14px; }
 .swatch {
   aspect-ratio: 1;

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Markdown } from '../components/Markdown'
 import { correctSet, isChoice } from '../lib/choice'
 import { fehlerText } from '../lib/offline'
+import { useKuerzel } from '../lib/kuerzel'
 import type { Item } from '../lib/types'
 import { zeigeZahl } from '../lib/zahlen'
 import { TYPE_LABEL } from './Study'
@@ -18,6 +19,7 @@ export function Drafts(props: {
   onDecide: (ids: number[], status: Decision) => Promise<void>
   onBack: () => void
 }) {
+  const kurz = useKuerzel()
   const [busy, setBusy] = useState<Set<number>>(new Set())
   const [error, setError] = useState<string | null>(null)
 
@@ -56,7 +58,7 @@ export function Drafts(props: {
           <section key={key} className="draft-group">
             <div className="draft-group-head">
               <h2>
-                {module}{week ? `, Woche ${week}` : ''}
+                {kurz(module)}{week ? `, Woche ${week}` : ''}
                 {props.names[module] && <span className="module-sub">{props.names[module]}</span>}
               </h2>
               <button className="link" disabled={ids.some((id) => busy.has(id))} onClick={() => decide(ids, 'freigegeben')}>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FARBWAHL, istFarbe, mitEigenen } from './farben'
+import { alsModulWahl, farbenAus, FARBWAHL, istFarbe, kuerzelAus, mitEigenen, normKuerzel } from './farben'
 
 describe('Modulfarben', () => {
   it('prüft Farben wie die Datenbank', () => {
@@ -19,5 +19,21 @@ describe('Modulfarben', () => {
     })
     expect(mitEigenen(standard, { BIL: 'kaputt' })).toEqual(standard)
     expect(standard.MAK).toBe('#a21caf')
+  })
+
+  it('bereinigt eigene Kürzel', () => {
+    expect(normKuerzel('  Bilanz  ', 'BIL')).toBe('Bilanz')
+    expect(normKuerzel('Kosten   und Leistung', 'KLR')).toBe('Kosten und L')
+    expect(normKuerzel('', 'BIL')).toBeUndefined()
+    expect(normKuerzel('   ', 'BIL')).toBeUndefined()
+    expect(normKuerzel('BIL', 'BIL')).toBeUndefined()
+  })
+
+  it('trennt Farben und Kürzel und liest alte Stände', () => {
+    const wahl = alsModulWahl({ BIL: '#c2410c', MAK: { kuerzel: 'Makro' }, STA1: { color: 'kaputt', kuerzel: ' ' }, X: 7 })
+    expect(wahl).toEqual({ BIL: { color: '#c2410c' }, MAK: { kuerzel: 'Makro' } })
+    expect(farbenAus(wahl)).toEqual({ BIL: '#c2410c' })
+    expect(kuerzelAus(wahl)).toEqual({ MAK: 'Makro' })
+    expect(alsModulWahl(null)).toEqual({})
   })
 })

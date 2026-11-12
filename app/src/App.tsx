@@ -4,7 +4,8 @@ import { DemoStore } from './lib/store-demo'
 import { SupabaseStore } from './lib/store-supabase'
 import { supabase } from './lib/supabase'
 import { dailyQuota, getReactivated, isWritten, setReactivated } from './lib/exams'
-import { mitEigenen } from './lib/farben'
+import { farbenAus, kuerzelAus, mitEigenen, type ModulWahl } from './lib/farben'
+import { KuerzelContext } from './lib/kuerzel'
 import { addDays, addMinutes, isoDate, moduleColors, sortBlocks, weekStart, type StudyBlock } from './lib/plan'
 import { buildQueue, newPerModule, overview, weekCounts } from './lib/queue'
 import { countIntroduced, remainingNew } from './lib/settings'
@@ -55,7 +56,7 @@ export function App() {
   const [notes, setNotes] = useState<NoteSummary[]>([])
   const [notesError, setNotesError] = useState<string | null>(null)
   const [modules, setModules] = useState<ModuleInfo[]>([])
-  const [eigeneFarben, setEigeneFarben] = useState<Record<string, string>>({})
+  const [modulWahl, setModulWahl] = useState<Record<string, ModulWahl>>({})
   const [drafts, setDrafts] = useState<Item[]>([])
   const [reactivated, setReactivatedState] = useState<string[]>(getReactivated)
   const [todayBlocks, setTodayBlocks] = useState<StudyBlock[]>([])
@@ -112,7 +113,7 @@ export function App() {
       // ohne Tabelle modules (Migration fehlt) zeigt die App einfach keine Modulinfos
       setModules([])
     }
-    setEigeneFarben(await store.loadColors().catch(() => ({})))
+    setModulWahl(await store.loadModulWahl().catch(() => ({})))
     setLoaded((n) => n + 1)
     // Offline-Modus: alle Notizen im Hintergrund aufs Gerät, höchstens einmal am Tag
     void store.vorladen?.().catch(() => undefined)
@@ -203,24 +204,26 @@ export function App() {
       .map((m) => ({ module: m, name: moduleNames[m], exam: exams[m] ?? null }))
       .sort((a, b) => (a.exam ?? '9999').localeCompare(b.exam ?? '9999') || a.module.localeCompare(b.module, 'de'))
   }, [modules, cards, moduleNames, exams])
-  const colors = useMemo(
-    () => mitEigenen(moduleColors(planModules.map((m) => m.module)), eigeneFarben),
-    [planModules, eigeneFarben],
-  )
   const standardFarben = useMemo(() => moduleColors(planModules.map((m) => m.module)), [planModules])
+  const colors = useMemo(() => mitEigenen(standardFarben, farbenAus(modulWahl)), [standardFarben, modulWahl])
+  const eigeneKuerzel = useMemo(() => kuerzelAus(modulWahl), [modulWahl])
 
-  async function changeColor(module: string, color: string | null) {
-    const vorher = eigeneFarben
-    setEigeneFarben((f) => {
-      const neu = { ...f }
-      if (color) neu[module] = color
+  // Farbe oder Kürzel eines Moduls ändern; sofort sichtbar, bei einem Fehler zurück
+  async function changeModulWahl(module: string, aenderung: ModulWahl) {
+    const vorher = modulWahl
+    const wahl: ModulWahl = { ...vorher[module], ...aenderung }
+    if (!wahl.color) delete wahl.color
+    if (!wahl.kuerzel) delete wahl.kuerzel
+    setModulWahl((alle) => {
+      const neu = { ...alle }
+      if (wahl.color || wahl.kuerzel) neu[module] = wahl
       else delete neu[module]
       return neu
     })
     try {
-      await store?.saveColor(module, color)
+      await store?.saveModulWahl(module, wahl)
     } catch (e) {
-      setEigeneFarben(vorher)
+      setModulWahl(vorher)
       throw e
     }
   }
@@ -316,10 +319,10 @@ export function App() {
           module: m.module,
           name: m.name,
           color: colors[m.module],
-          eigen: m.module in eigeneFarben,
-          standard: standardFarben[m.module],
+          eigeneFarbe: !!modulWahl[m.module]?.color,
+          kuerzel: eigeneKuerzel[m.module],
         }))}
-        onChangeColor={changeColor}
+        onChange={changeModulWahl}
         onBack={() => setView({ name: 'home' })}
         onLogout={logout}
         onResetDemo={() => {
@@ -435,9 +438,9 @@ export function App() {
   }
 
   return (
-    <>
+    <KuerzelContext.Provider value={eigeneKuerzel}>
       {demoBand}
       {body}
-    </>
+    </KuerzelContext.Provider>
   )
 }

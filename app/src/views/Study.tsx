@@ -4,6 +4,7 @@ import { RatingBar } from '../components/RatingBar'
 import { correctSet, evaluate, isChoice, shuffledOrder } from '../lib/choice'
 import { preview, rate } from '../lib/fsrs'
 import { advance } from '../lib/queue'
+import { useKuerzel } from '../lib/kuerzel'
 import type { Grade, ItemType, ReviewRecord, StudyCard } from '../lib/types'
 import { pruefe, vorschlag, zeigeZahl } from '../lib/zahlen'
 
@@ -22,6 +23,7 @@ export function Study(props: {
   onReview: (r: ReviewRecord, wasNew: boolean) => void
   onExit: () => void
 }) {
+  const kurz = useKuerzel()
   const [queue, setQueue] = useState(props.initial)
   const [revealed, setRevealed] = useState(false)
   const [selected, setSelected] = useState<number[]>([])
@@ -135,7 +137,7 @@ export function Study(props: {
         onClick={() => !revealed && !choice && !rechen && setRevealed(true)}
       >
         <div className="card-head">
-          <span>{item.module}{item.week ? `, Woche ${item.week}` : ''}</span>
+          <span>{kurz(item.module)}{item.week ? `, Woche ${item.week}` : ''}</span>
           <span>{card.state.state === 0 ? 'neu' : TYPE_LABEL[item.type]}</span>
         </div>
 

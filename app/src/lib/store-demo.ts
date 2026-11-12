@@ -1,5 +1,6 @@
 import { DEMO_DRAFTS, DEMO_ITEMS } from './demo-cards'
 import { DEMO_MODULES, DEMO_NOTES } from './demo-notes'
+import { alsModulWahl, type ModulWahl } from './farben'
 import { resetIntroduced } from './settings'
 import { sortBlocks, type NewBlock, type StudyBlock } from './plan'
 import type { Store } from './store'
@@ -8,7 +9,7 @@ import type { CardStateFields, Item, ModuleInfo, Note, NoteSummary, ReviewRecord
 const KEY = 'studhack.demo'
 const DRAFTS_KEY = 'studhack.demoDrafts'
 const BLOCKS_KEY = 'studhack.demoBlocks'
-const COLORS_KEY = 'studhack.demoFarben'
+const COLORS_KEY = 'studhack.demoFarben'  // Farben und Kürzel
 
 function emptyState(): CardStateFields {
   return {
@@ -111,20 +112,20 @@ export class DemoStore implements Store {
     this.writeBlocks(this.blocks().filter((b) => b.id !== id))
   }
 
-  async loadColors(): Promise<Record<string, string>> {
+  async loadModulWahl(): Promise<Record<string, ModulWahl>> {
     try {
-      return JSON.parse(localStorage.getItem(COLORS_KEY) ?? '{}') as Record<string, string>
+      return alsModulWahl(JSON.parse(localStorage.getItem(COLORS_KEY) ?? '{}'))
     } catch {
       return {}
     }
   }
 
-  async saveColor(module: string, color: string | null): Promise<void> {
-    const farben = await this.loadColors()
-    if (color) farben[module] = color
-    else delete farben[module]
+  async saveModulWahl(module: string, wahl: ModulWahl): Promise<void> {
+    const alle = await this.loadModulWahl()
+    if (wahl.color || wahl.kuerzel) alle[module] = wahl
+    else delete alle[module]
     try {
-      localStorage.setItem(COLORS_KEY, JSON.stringify(farben))
+      localStorage.setItem(COLORS_KEY, JSON.stringify(alle))
     } catch {
       // Demo läuft dann nur bis zum Neuladen
     }
