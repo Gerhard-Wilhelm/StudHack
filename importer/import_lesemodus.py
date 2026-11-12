@@ -28,9 +28,8 @@ import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
-
 from importer.import_notes import NOTE_NAME, PROJECT_DIR, Supabase, find_notes
+from konfig import lade_config
 
 BUCKET = "folien"
 MAX_WIDTH = 1400
@@ -261,7 +260,7 @@ def main() -> int:
     p.add_argument("--schreiben", action="store_true", help="wirklich hochladen (ohne: Trockenlauf)")
     args = p.parse_args()
 
-    cfg = yaml.safe_load((PROJECT_DIR / "config.yaml").read_text(encoding="utf-8"))
+    cfg = lade_config()
     vault = Path(cfg["vault"]).expanduser()
     pfade = find_notes(vault, args.modul, args.notiz)
     # Mit --notiz geht es um einzelne Wochen, die Übersichten bleiben dann außen vor

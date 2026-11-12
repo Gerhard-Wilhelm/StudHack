@@ -29,11 +29,10 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
-
 from generator.generate_mc import Abgelehnt, Kosten, Verbindung, folienseite, frage_claude
 from importer.import_lesemodus import parse_note
 from importer.import_notes import PROJECT_DIR, Supabase, find_notes
+from konfig import lade_config
 
 MAX_FELDER = 4
 # Großzügig, damit auch Notizen mit 30 und mehr Übungsaufgaben nicht abgeschnitten werden
@@ -442,7 +441,7 @@ def main() -> int:
     p.add_argument("--neu", action="store_true", help="auch Notizen bearbeiten, zu denen es schon Rechenaufgaben gibt")
     args = p.parse_args()
 
-    cfg = yaml.safe_load((PROJECT_DIR / "config.yaml").read_text(encoding="utf-8"))
+    cfg = lade_config()
     vault = Path(cfg["vault"]).expanduser()
     notizen = [n for n in (parse_note(pf, vault) for pf in find_notes(vault, args.modul, args.notiz)) if n]
     # Ohne Übungsaufgaben oder bei abgeschaltetem Modul gibt es nichts zu tun, also auch keine API-Kosten

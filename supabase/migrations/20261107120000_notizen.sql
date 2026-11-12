@@ -4,7 +4,7 @@
 --   notes          eine Zeile pro Wochennotiz (Markdown ohne Karteikarten-Abschnitt)
 --   Bucket folien  verkleinerte Folienbilder, privat, Pfad <user_id>/<Kürzel>/<Bild>.jpg
 --
--- Beides schreibt importer/import_lesemodus.py, angemeldet als Gerhard.
+-- Beides schreibt importer/import_lesemodus.py, angemeldet mit dem Nutzerkonto.
 
 -- 1. Wochennotizen -----------------------------------------------------------------
 

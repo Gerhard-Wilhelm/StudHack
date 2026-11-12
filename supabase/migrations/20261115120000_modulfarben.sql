@@ -1,7 +1,7 @@
 -- StudHack: selbst gewählte Farben je Modul
 -- Ziel: supabase/migrations/20261115120000_modulfarben.sql
 --
--- module_colors  eine Zeile je Modul mit der Farbe, die Gerhard in den Einstellungen gewählt hat.
+-- module_colors  eine Zeile je Modul mit der Farbe, die in den Einstellungen gewählt wurde.
 --                Fehlt ein Modul, nimmt die App die automatische Farbe aus dem Lernplan.
 -- Die App legt Zeilen an, ändert und löscht sie ("Standard"). Ohne diese Tabelle nutzt
 -- die App einfach die Standardfarben.

@@ -11,10 +11,10 @@ from datetime import date
 from pathlib import Path
 
 import requests
-import yaml
 
 from .client import PROJECT_DIR, AuthError, StudIP
 from .extract import pdf_to_text
+from konfig import lade_config
 
 STATE_FILE = PROJECT_DIR / "state" / "state.json"
 TEXT_DIR = PROJECT_DIR / "cache" / "text"
@@ -22,7 +22,7 @@ REPORT_DIR = PROJECT_DIR / "reports"
 
 
 def load_config() -> dict:
-    return yaml.safe_load((PROJECT_DIR / "config.yaml").read_text(encoding="utf-8"))
+    return lade_config()
 
 
 def load_state() -> dict:

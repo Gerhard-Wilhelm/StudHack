@@ -21,12 +21,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-import yaml
-
 from generator import generate_rechen as rechen
 from generator.generate_mc import Generator, anzahl
 from importer import import_lesemodus as lesemodus
 from importer.import_notes import PROJECT_DIR, aenderungen, find_notes, lese_alle
+from konfig import lade_config
 
 KOSTEN_JE_NOTIZ = 0.15  # Dollar, grob nach den bisherigen Läufen
 
@@ -103,7 +102,7 @@ def main() -> int:
     p.add_argument("--ja", action="store_true", help="ohne Rückfrage ausführen")
     args = p.parse_args()
 
-    cfg = yaml.safe_load((PROJECT_DIR / "config.yaml").read_text(encoding="utf-8"))
+    cfg = lade_config()
     vault = Path(cfg["vault"]).expanduser()
 
     print("Vorschau (liest nur, schreibt nichts):")

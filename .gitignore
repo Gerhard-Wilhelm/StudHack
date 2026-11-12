@@ -13,3 +13,5 @@ supabase/.temp/
 .env.*
 !.env.example
 logs/
+
+config.yaml
