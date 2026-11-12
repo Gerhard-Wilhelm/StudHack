@@ -1,6 +1,6 @@
 <h1 align="center">./StudHack</h1>
 
-<p align="center"><img src="docs/slogan-de.svg" width="560" alt="Der Shortcut durchs Semester"></p>
+<p align="center"><img src="docs/slogan-de.svg" width="100%" alt="„Der Shortcut durchs Semester“"></p>
 
 <p align="center">
   <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/English-6b7280?style=for-the-badge"></a>
