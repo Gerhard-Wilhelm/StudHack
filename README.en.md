@@ -1,6 +1,6 @@
 <p>
   <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/English-1d4ed8?style=for-the-badge"></a>
-  <a href="README.de.md"><img alt="Deutsch" src="https://img.shields.io/badge/Deutsch-6b7280?style=for-the-badge"></a>
+  <a href="README.md"><img alt="Deutsch" src="https://img.shields.io/badge/Deutsch-6b7280?style=for-the-badge"></a>
 </p>
 
 # ./StudHack
