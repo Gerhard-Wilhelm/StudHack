@@ -11,23 +11,12 @@
 </p>
 
 <p align="center">
+  <img src="docs/vorschau.gif" width="320" alt="Rundgang durch die App: Lernplan, Lernkarten, Wochennotiz, Einstellungen / Tour of the app: study plan, cards, weekly note, settings">
+</p>
+
+<p align="center">
   <a href="https://studhack.pages.dev"><b>Demo ausprobieren / Try the demo</b></a><br>
   <sub>"Demo ausprobieren" auf der Startseite tippen, keine Anmeldung nötig. Tap "Demo ausprobieren" on the login screen, no account needed.</sub>
 </p>
-
-<table align="center">
-  <tr>
-    <td><img src="docs/screenshots/start-dunkel.png" width="200" alt="Startseite / Home"></td>
-    <td><img src="docs/screenshots/auswahl-dunkel.png" width="200" alt="Auswahlfrage / Multiple choice"></td>
-    <td><img src="docs/screenshots/rechen-dunkel.png" width="200" alt="Rechenaufgabe / Calculation task"></td>
-    <td><img src="docs/screenshots/notiz-dunkel.png" width="200" alt="Wochennotiz / Weekly note"></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/plan-dunkel.png" width="200" alt="Lernplan / Study plan"></td>
-    <td><img src="docs/screenshots/einstellungen-dunkel.png" width="200" alt="Einstellungen / Settings"></td>
-    <td><img src="docs/screenshots/start-hell.png" width="200" alt="Startseite hell / Home light"></td>
-    <td><img src="docs/screenshots/notiz-hell.png" width="200" alt="Wochennotiz hell / Weekly note light"></td>
-  </tr>
-</table>
 
 <p align="center"><sub>MIT License. Privates Lernprojekt ohne Verbindung zur MLU Halle oder zu Stud.IP. Personal project, not affiliated with MLU Halle or Stud.IP.</sub></p>

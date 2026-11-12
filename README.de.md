@@ -17,20 +17,9 @@ bleibt auf deinem Gerät.
 
 ## Vorschau
 
-<table>
-  <tr>
-    <td><img src="docs/screenshots/start-dunkel.png" width="200" alt="Startseite"></td>
-    <td><img src="docs/screenshots/karteikarte-dunkel.png" width="200" alt="Karteikarte"></td>
-    <td><img src="docs/screenshots/auswahl-dunkel.png" width="200" alt="Auswahlfrage"></td>
-    <td><img src="docs/screenshots/rechen-dunkel.png" width="200" alt="Rechenaufgabe"></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/notiz-dunkel.png" width="200" alt="Wochennotiz"></td>
-    <td><img src="docs/screenshots/plan-dunkel.png" width="200" alt="Lernplan"></td>
-    <td><img src="docs/screenshots/einstellungen-dunkel.png" width="200" alt="Einstellungen"></td>
-    <td><img src="docs/screenshots/start-hell.png" width="200" alt="Startseite hell"></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/vorschau.gif" width="320" alt="Rundgang durch die App: Lernplan füllen, Karteikarte, Rechenaufgabe, Auswahlfrage, Wochennotiz, Modulfarbe ändern">
+</p>
 
 ## Funktionen
 

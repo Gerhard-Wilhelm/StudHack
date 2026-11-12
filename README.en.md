@@ -19,20 +19,9 @@ on your device.
 
 ## Preview
 
-<table>
-  <tr>
-    <td><img src="docs/screenshots/start-dunkel.png" width="200" alt="Home"></td>
-    <td><img src="docs/screenshots/karteikarte-dunkel.png" width="200" alt="Flashcard"></td>
-    <td><img src="docs/screenshots/auswahl-dunkel.png" width="200" alt="Multiple choice"></td>
-    <td><img src="docs/screenshots/rechen-dunkel.png" width="200" alt="Calculation task"></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/notiz-dunkel.png" width="200" alt="Weekly note"></td>
-    <td><img src="docs/screenshots/plan-dunkel.png" width="200" alt="Study plan"></td>
-    <td><img src="docs/screenshots/einstellungen-dunkel.png" width="200" alt="Settings"></td>
-    <td><img src="docs/screenshots/start-hell.png" width="200" alt="Home in light mode"></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/vorschau.gif" width="320" alt="Tour of the app: fill the study plan, flashcard, calculation task, multiple choice, weekly note, change a module color">
+</p>
 
 ## Features
 
