@@ -1,8 +1,8 @@
 <h1 align="center">./StudHack</h1>
 
 <p align="center">
-  Lern-App fürs Studium: Materialien aus Stud.IP, Wochennotizen mit Claude, Abfrage mit Spaced Repetition am Handy.<br>
-  Study app for university: course material from Stud.IP, weekly notes written with Claude, spaced repetition on your phone.
+  Stud.IP-Material, Wochennotizen mit Claude und Spaced Repetition am Handy<br>
+  Stud.IP material, weekly notes by Claude and spaced repetition on your phone
 </p>
 
 <p align="center">
