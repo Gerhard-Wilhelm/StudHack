@@ -26,10 +26,9 @@ import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
-
 from importer.import_lesemodus import parse_note
 from importer.import_notes import PROJECT_DIR, Supabase, find_notes
+from konfig import lade_config
 
 MODEL = "claude-sonnet-5-5"
 # Dollar pro Million Token (Claude Sonnet 5.5): Eingabe, Ausgabe, Cache schreiben, Cache lesen
@@ -354,7 +353,7 @@ def main() -> int:
     p.add_argument("--neu", action="store_true", help="auch Notizen bearbeiten, zu denen es schon Fragen gibt")
     args = p.parse_args()
 
-    cfg = yaml.safe_load((PROJECT_DIR / "config.yaml").read_text(encoding="utf-8"))
+    cfg = lade_config()
     vault = Path(cfg["vault"]).expanduser()
     notizen = [n for n in (parse_note(pf, vault) for pf in find_notes(vault, args.modul, args.notiz)) if n]
     if not notizen:

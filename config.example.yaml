@@ -1,0 +1,41 @@
+# Beispiel. Kopieren nach config.yaml (wird nicht eingecheckt) und anpassen:
+#   cp config.example.yaml config.yaml
+
+# Basis-URL der Stud.IP Instanz deiner Hochschule
+studip_url: https://studip.uni-halle.de
+
+# Obsidian-Vault. Downloads landen in <vault>/06 Anhänge/<Kürzel>/
+vault: ~/StudHack/Studium Vault
+
+# Auswahlfragen pro Wochennotiz für generator/generate_mc.py
+# (single = genau eine von vier Antworten richtig, multiple = eine oder mehrere richtig).
+# Module ohne eigenen Eintrag "auswahlfragen" bekommen diese Werte.
+auswahlfragen:
+  single: 4
+  multiple: 2
+
+# Rechenaufgaben (generator/generate_rechen.py) gibt es für alle Module außer denen
+# mit "rechenaufgaben: false".
+
+# Module mit ihren Stud.IP Kurs-IDs (Vorlesung, Übung, ...) und dem gewählten Klausurtermin.
+# Die Kurs-IDs aller belegten Kurse zeigt: python -m scanner.scan --list-courses
+module:
+  STA:
+    name: Statistik
+    pruefung: 2027-03-01  # gewählter Klausurtermin
+    auswahlfragen: {single: 3, multiple: 3}  # eigene Werte für dieses Modul
+    kurse:
+      - 00000000000000000000000000000001  # Vorlesung
+      - 00000000000000000000000000000002  # Übung
+  FIN:
+    name: Finanzierung
+    pruefung: 2027-03-15
+    rechenaufgaben: true
+    kurse:
+      - 00000000000000000000000000000003  # Vorlesung
+  POL:
+    name: Wirtschaftspolitik
+    pruefung: 2027-02-15
+    rechenaufgaben: false  # kaum Aufgaben mit Zahlenergebnis
+    kurse:
+      - 00000000000000000000000000000004  # Vorlesung

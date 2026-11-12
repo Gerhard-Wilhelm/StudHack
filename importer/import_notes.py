@@ -21,7 +21,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
+from konfig import lade_config
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
@@ -132,7 +132,7 @@ def find_notes(vault: Path, modul: str | None, notiz: str | None) -> list[Path]:
 
 
 class Supabase:
-    """Minimaler REST-Zugriff. Meldet sich als Gerhard an, damit die Zugriffsregeln greifen."""
+    """Minimaler REST-Zugriff. Meldet sich mit dem Nutzerkonto aus .env an, damit die Zugriffsregeln greifen."""
 
     def __init__(self):
         import requests
@@ -213,7 +213,7 @@ def main() -> int:
     p.add_argument("--schreiben", action="store_true", help="wirklich in Supabase schreiben (ohne: Trockenlauf)")
     args = p.parse_args()
 
-    cfg = yaml.safe_load((PROJECT_DIR / "config.yaml").read_text(encoding="utf-8"))
+    cfg = lade_config()
     vault = Path(cfg["vault"]).expanduser()
     notes = find_notes(vault, args.modul, args.notiz)
     if not notes:

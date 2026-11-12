@@ -12,9 +12,8 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-import yaml
-
 from importer.import_notes import PROJECT_DIR, Supabase
+from konfig import lade_config
 
 WOCHEN = 3
 WOCHENTAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
@@ -81,7 +80,7 @@ def notiz(blocks: list[dict], montag: date, namen: dict[str, str], heute: date, 
 def schreiben(heute: date | None = None) -> Path:
     """Holt die Blöcke und schreibt die Notiz. Gibt den Pfad zurück."""
     heute = heute or date.today()
-    cfg = yaml.safe_load((PROJECT_DIR / "config.yaml").read_text(encoding="utf-8"))
+    cfg = lade_config()
     vault = Path(cfg["vault"]).expanduser()
     namen = {k: (v or {}).get("name", k) for k, v in cfg.get("module", {}).items()}
     montag = heute - timedelta(days=heute.weekday())

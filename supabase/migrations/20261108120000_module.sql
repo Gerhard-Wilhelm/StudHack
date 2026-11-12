@@ -4,7 +4,7 @@
 --   modules   eine Zeile pro Modul: Kürzel, voller Name und Übersicht aus dem Vault
 --             (Eckdaten, Hinweise, Ablaufplan, Lernmethoden, ohne Wochentabelle)
 --
--- Schreibt importer/import_lesemodus.py, angemeldet als Gerhard.
+-- Schreibt importer/import_lesemodus.py, angemeldet mit dem Nutzerkonto.
 
 create table public.modules (
   id            bigint generated always as identity primary key,

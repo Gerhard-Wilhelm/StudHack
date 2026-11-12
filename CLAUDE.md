@@ -1,6 +1,6 @@
 # StudHack Lernassistent
 
-Lern-App für Gerhards Studium an der MLU Halle. Lädt Materialien aus Stud.IP,
+Lern-App für ein Studium an der MLU Halle. Lädt Materialien aus Stud.IP,
 erzeugt daraus Wochennotizen und Lernfragen und fragt sie mit Spaced Repetition
 am iPhone ab.
 
@@ -8,18 +8,18 @@ am iPhone ab.
 
 - Vor jeder Datei-Änderung kurz zeigen, was geändert wird, und auf ein Go warten.
   In Cloud-Sessions: nur auf einem eigenen Branch arbeiten, übernommen wird erst
-  nach Gerhards Go im Pull Request.
+  nach dem Go des Nutzers im Pull Request.
 - Die Stud.IP JSON:API wird ausschließlich lesend genutzt (nur GET).
-- `.env` enthält Gerhards Zugangsdaten. Claude liest, druckt oder ändert diese
+- `.env` enthält die Zugangsdaten des Nutzers. Claude liest, druckt oder ändert diese
   Datei nie.
 - Keine Folieninhalte, PDFs, extrahierten Texte oder Vault-Notizen ins
   Repository. Testdaten nur selbst geschrieben und kurz.
 - Keine Schlüssel im Code (Supabase, Claude API). Lokal in `.env`, bei Supabase
   als Secrets.
-- Der Scanner läuft nur auf Gerhards Mac. Cloud-Sessions bauen und testen ohne
+- Der Scanner läuft nur auf dem Mac des Nutzers. Cloud-Sessions bauen und testen ohne
   Stud.IP-Zugang.
 - Neue Lernobjekte aus dem Generator sind Entwürfe und kommen erst nach
-  Gerhards Freigabe in den Lernstapel.
+  Freigabe durch den Nutzer in den Lernstapel.
 - Infrastruktur nur im Gratis-Tarif. Laufende Kosten entstehen nur durch die
   Claude API.
 - Schreibstil: duzen, keine Emojis, keine Gedankenstriche.
@@ -38,11 +38,11 @@ am iPhone ab.
 
 ## Aufbau
 
-Gesamtbild mit Ablaufdiagramm, Datenmodell und Einrichtung in `README.md`,
-Bedienung für Gerhard im Vault unter `00 Kontext/Lernassistent Anleitung.md`.
+Gesamtbild mit Ablaufdiagramm, Datenmodell und Einrichtung in `README.de.md` (englisch `README.en.md`, Startseite mit Vorschau `README.md`),
+Bedienung für den Nutzer im Vault unter `00 Kontext/Lernassistent Anleitung.md`.
 
 Bestehend:
-- `config.yaml`: Module, Kurs-IDs, gewählter Klausurtermin (`pruefung`), Vault-Pfad, Anzahl Auswahlfragen, Rechenaufgaben je Modul an oder aus
+- `config.yaml` (lokal, nicht im Repository, Vorlage `config.example.yaml`, gelesen über `konfig.py`): Module, Kurs-IDs, gewählter Klausurtermin (`pruefung`), Vault-Pfad, Anzahl Auswahlfragen, Rechenaufgaben je Modul an oder aus
 - `scanner/client.py`: API-Zugriff und Anmeldung
 - `scanner/scan.py`: Abgleich, Download, Bericht (Einstiegspunkt)
 - `scanner/auto.py`: täglicher Scan per launchd (07:30) mit macOS-Mitteilung bei neuen Dateien, Protokoll in `logs/` (lokal, nicht im Repository). Einrichten und Abschalten mit `scripts/scan_einrichten.sh` (`--entfernen`)
@@ -73,7 +73,7 @@ Geplant:
 
 1. Der tägliche Scan meldet neue Dateien (oder von Hand: `python -m scanner.scan`).
 2. In einer Sitzung "Verarbeite die neuen Materialien": Claude liest den neuesten Bericht
-   in `reports/`, zeigt die geplanten Wochennotizen und schreibt sie nach Gerhards Go.
+   in `reports/`, zeigt die geplanten Wochennotizen und schreibt sie nach dem Go des Nutzers.
 3. `python -m wochenlauf`: Karten, Lesemodus, Auswahlfragen und Rechenaufgaben in die App.
 4. In der App unter "Entwürfe prüfen" die Auswahl- und Rechenaufgaben freigeben.
 
