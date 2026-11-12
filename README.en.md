@@ -1,9 +1,11 @@
 <p>
   <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/English-1d4ed8?style=for-the-badge"></a>
-  <a href="README.de.md"><img alt="Deutsch" src="https://img.shields.io/badge/Deutsch-6b7280?style=for-the-badge"></a>
+  <a href="README.md"><img alt="Deutsch" src="https://img.shields.io/badge/Deutsch-6b7280?style=for-the-badge"></a>
 </p>
 
 # ./StudHack
+
+<img src="docs/slogan-en.svg" width="100%" alt="“The shortcut through your semester”">
 
 A study assistant for university: it downloads course material from Stud.IP,
 turns it into weekly notes in an Obsidian vault with Claude, and brings notes,

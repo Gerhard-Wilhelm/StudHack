@@ -38,7 +38,7 @@ am iPhone ab.
 
 ## Aufbau
 
-Gesamtbild mit Ablaufdiagramm, Datenmodell und Einrichtung in `README.de.md` (englisch `README.en.md`, Startseite mit Vorschau `README.md`),
+Gesamtbild mit Ablaufdiagramm, Datenmodell und Einrichtung in `README.md` (englisch `README.en.md`),
 Bedienung für den Nutzer im Vault unter `00 Kontext/Lernassistent Anleitung.md`.
 
 Bestehend:
