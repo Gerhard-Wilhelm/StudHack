@@ -4,6 +4,7 @@ import {
   suggestWeek, timeSlots, weekDays, weekStart, type NewBlock, type StudyBlock,
 } from '../lib/plan'
 import { fehlerText } from '../lib/offline'
+import { useKuerzel } from '../lib/kuerzel'
 import type { Store } from '../lib/store'
 
 export interface PlanModule {
@@ -37,6 +38,7 @@ export function Plan(props: {
   onStudy: (module: string) => void
   onBack: () => void
 }) {
+  const kurz = useKuerzel()
   const { store } = props
   const today = isoDate(props.now)
   const [monday, setMonday] = useState(props.initialMonday ?? weekStart(today))
@@ -196,7 +198,7 @@ export function Plan(props: {
         {gesamt === 0 ? 'Noch nichts geplant.' : `Gesamt ${stunden(gesamt)}: `}
         {summe.map((s) => (
           <span key={s.module} className="sum-chip" style={{ '--m': props.colors[s.module] } as CSSProperties}>
-            {s.module} {stunden(s.hours)}
+            {kurz(s.module)} {stunden(s.hours)}
           </span>
         ))}
       </p>
@@ -242,7 +244,7 @@ export function Plan(props: {
                       onPointerCancel={onCancel}
                       onContextMenu={(e) => e.preventDefault()}
                     >
-                      <span className="block-module">{b.module}</span>
+                      <span className="block-module">{kurz(b.module)}</span>
                       <span className="block-time">
                         {b.start_time} bis {addMinutes(b.start_time, b.duration_min)}
                       </span>
@@ -258,7 +260,7 @@ export function Plan(props: {
 
       {drag && (
         <div className="block block-ghost" style={{ left: drag.x, top: drag.y, '--m': props.colors[drag.block.module] } as CSSProperties}>
-          <span className="block-module">{drag.block.module}</span>
+          <span className="block-module">{kurz(drag.block.module)}</span>
         </div>
       )}
 
@@ -297,6 +299,7 @@ function BlockSheet(props: {
   onDelete: (id: number) => void
   onStudy: (module: string) => void
 }) {
+  const kurz = useKuerzel()
   const [b, setB] = useState<NewBlock>(props.block)
   const neu = props.block.id === undefined
 
@@ -314,7 +317,7 @@ function BlockSheet(props: {
               style={{ '--m': props.colors[m.module] } as CSSProperties}
               onClick={() => setB({ ...b, module: m.module })}
             >
-              {m.module}
+              {kurz(m.module)}
             </button>
           ))}
         </div>
@@ -348,7 +351,7 @@ function BlockSheet(props: {
         <div className="sheet-actions">
           {!neu && (
             <button className="quiet" onClick={() => props.onStudy(b.module)}>
-              {b.module} jetzt lernen
+              {kurz(b.module)} jetzt lernen
             </button>
           )}
           <button className="primary" disabled={!b.module} onClick={() => props.onSave(b)}>

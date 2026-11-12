@@ -4,6 +4,7 @@ import type { Counts } from '../lib/queue'
 import type { Store } from '../lib/store'
 import { fehlerText } from '../lib/offline'
 import type { Note, NoteSummary } from '../lib/types'
+import { useKuerzel } from '../lib/kuerzel'
 
 export function WeekView(props: {
   module: string
@@ -16,6 +17,7 @@ export function WeekView(props: {
   onStudy: () => void
   onBack: () => void
 }) {
+  const kurz = useKuerzel()
   const { store, summary } = props
   const [note, setNote] = useState<Note | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +46,7 @@ export function WeekView(props: {
   return (
     <main className="page week-view">
       <header className="bar">
-        <button className="link" onClick={props.onBack}>{props.module}</button>
+        <button className="link" onClick={props.onBack}>{kurz(props.module)}</button>
       </header>
       <h1 className="title note-title">
         <span className="note-week">{props.week ? `Woche ${props.week}` : 'Ohne Woche'}</span>

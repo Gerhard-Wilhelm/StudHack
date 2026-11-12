@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { daysUntil, formatDate, formatExam } from '../lib/exams'
+import { useKuerzel } from '../lib/kuerzel'
 import type { Counts } from '../lib/queue'
 import type { ModuleInfo, NoteSummary } from '../lib/types'
 
@@ -24,6 +25,7 @@ export function ModuleView(props: {
   onStudy: () => void
   onBack: () => void
 }) {
+  const kurz = useKuerzel()
   const due = props.weeks.reduce((s, w) => s + w.counts.due, 0)
   const fresh = props.weeks.reduce((s, w) => s + w.counts.fresh, 0)
   const total = due + Math.min(fresh, props.newLimit)
@@ -33,7 +35,7 @@ export function ModuleView(props: {
       <header className="bar">
         <button className="link" onClick={props.onBack}>Zurück</button>
       </header>
-      <h1 className="title">{props.module}</h1>
+      <h1 className="title">{kurz(props.module)}</h1>
       {props.info && (
         <>
           <p className="module-fullname">{props.info.name}</p>
@@ -74,7 +76,7 @@ export function ModuleView(props: {
 
       <footer className="dock">
         <button className="primary big" disabled={total === 0} onClick={props.onStudy}>
-          {total === 0 ? 'Nichts fällig' : `${props.module} lernen`}
+          {total === 0 ? 'Nichts fällig' : `${kurz(props.module)} lernen`}
         </button>
       </footer>
     </main>

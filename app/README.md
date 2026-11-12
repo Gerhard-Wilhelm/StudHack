@@ -108,7 +108,7 @@ Tippen öffnet das Menü, lange drücken und ziehen verschiebt. Vorschlag nach
 Klausurnähe oder Vorwoche übernehmen. Gespeichert in `study_blocks` (Migration
 `20261111120000_lernplan.sql`), `kalender.py` schreibt den Plan in den Vault.
 
-## Einstellungen und Modulfarben
+## Einstellungen, Modulfarben und Kürzel
 
 Die Einstellungen sind in Reiter geteilt: Lernen, Module, Mitteilungen,
 Offline und Konto (Mitteilungen und Offline nur mit Anmeldung). Der zuletzt
@@ -119,6 +119,13 @@ oder die automatische aus dem Lernplan. Gespeichert in der Tabelle
 `module_colors` (Migration `20261115120000_modulfarben.sql`), damit sie auf
 allen Geräten gilt, zwischengespeichert für offline. Ohne Tabelle nutzt die App
 die automatischen Farben. In der Demo liegen die Farben im Gerätespeicher.
+
+Beim Aufklappen eines Moduls lässt sich auch ein eigenes Kürzel vergeben
+(höchstens 12 Zeichen, leer heißt Original). Die Ansichten holen es über
+`useKuerzel()` aus `src/lib/kuerzel.ts`. Intern bleibt das Original-Kürzel
+überall der Schlüssel, Scanner, Importer und Datenbank merken davon nichts.
+Gespeichert in der Spalte `kuerzel` von `module_colors` (Migration
+`20261116120000_modulkuerzel.sql`). Die Mitteilungen nutzen weiter das Original.
 
 ## Offline-Modus
 

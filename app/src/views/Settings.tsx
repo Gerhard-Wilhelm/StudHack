@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { PushSettings } from '../components/PushSettings'
-import { FARBWAHL } from '../lib/farben'
+import { FARBWAHL, KUERZEL_MAX, normKuerzel, type ModulWahl } from '../lib/farben'
+import { useKuerzel } from '../lib/kuerzel'
 import { fehlerText } from '../lib/offline'
 import { DEFAULT_NEW_LIMIT, getNewLimit, introducedToday, setNewLimit } from '../lib/settings'
 
@@ -21,10 +22,10 @@ export interface ModulFarbe {
   name?: string
   /** aktuelle Farbe, selbst gewählt oder automatisch */
   color?: string
-  /** true, wenn selbst gewählt */
-  eigen: boolean
-  /** automatische Farbe aus dem Lernplan */
-  standard?: string
+  /** true, wenn die Farbe selbst gewählt ist */
+  eigeneFarbe: boolean
+  /** eigenes Kürzel, fehlt beim Original */
+  kuerzel?: string
 }
 
 export function Settings(props: {
@@ -37,9 +38,10 @@ export function Settings(props: {
   /** Offline-Modus: alle Folienbilder aufs Gerät laden (nur mit Supabase) */
   bilderVorladen?: (fortschritt: (fertig: number, gesamt: number) => void) => Promise<number>
   modules: ModulFarbe[]
-  /** Farbe setzen, null für die automatische Farbe */
-  onChangeColor: (module: string, color: string | null) => Promise<void>
+  /** Farbe oder Kürzel ändern; ein leeres Feld heißt Standard */
+  onChange: (module: string, aenderung: ModulWahl) => Promise<void>
 }) {
+  const kurz = useKuerzel()
   const [limit, setLimit] = useState(getNewLimit())
   const [bilder, setBilder] = useState<string | null>(null)
   const [laedt, setLaedt] = useState(false)
@@ -80,13 +82,18 @@ export function Settings(props: {
     }
   }
 
-  async function farbe(module: string, color: string | null) {
+  async function aendern(module: string, aenderung: ModulWahl) {
     setFarbFehler(null)
     try {
-      await props.onChangeColor(module, color)
+      await props.onChange(module, aenderung)
     } catch (e) {
-      setFarbFehler(`Farbe nicht gespeichert: ${fehlerText(e)}`)
+      setFarbFehler(`Nicht gespeichert: ${fehlerText(e)}`)
     }
+  }
+
+  function kuerzelSpeichern(m: ModulFarbe, eingabe: string) {
+    const neu = normKuerzel(eingabe, m.module)
+    if (neu !== m.kuerzel) void aendern(m.module, { kuerzel: neu })
   }
 
   function change(n: number) {
@@ -149,7 +156,7 @@ export function Settings(props: {
                     <label key={w.module} className="toggle-row">
                       <input type="checkbox" checked={w.active} onChange={() => props.onToggleWritten(w.module)} />
                       <span>
-                        {w.module}
+                        {kurz(w.module)}
                         {w.name ? `, ${w.name}` : ''} wieder abfragen
                       </span>
                     </label>
@@ -163,7 +170,7 @@ export function Settings(props: {
         {aktiv === 'module' && (
           <section className="setting">
             <p className="hint">
-              Farbe für Startseite, Lernplan und Lernkarte. {props.demo ? 'In der Demo nur auf diesem Gerät.' : 'Gilt auf allen Geräten.'}
+              Kürzel und Farbe für Startseite, Lernplan und Lernkarte. {props.demo ? 'In der Demo nur auf diesem Gerät.' : 'Gilt auf allen Geräten.'}
             </p>
             {props.modules.length === 0 && <p className="hint">Noch keine Module.</p>}
             <ul className="color-list">
@@ -175,11 +182,31 @@ export function Settings(props: {
                     onClick={() => setOffen((o) => (o === m.module ? null : m.module))}
                   >
                     <span className="color-dot" aria-hidden="true" />
-                    <span className="color-name">{m.module}</span>
-                    {m.name && <span className="color-sub">{m.name}</span>}
-                    <span className="color-state">{m.eigen ? 'eigene Farbe' : 'Standard'}</span>
+                    <span className="color-name">{m.kuerzel ?? m.module}</span>
+                    {(m.kuerzel || m.name) && (
+                      <span className="color-sub">{[m.kuerzel && m.module, m.name].filter(Boolean).join(', ')}</span>
+                    )}
                   </button>
                   {offen === m.module && (
+                    <>
+                    <label className="kuerzel-feld">
+                      <span>Kürzel</span>
+                      <input
+                        key={m.kuerzel ?? ''}
+                        type="text"
+                        defaultValue={m.kuerzel ?? ''}
+                        placeholder={m.module}
+                        maxLength={KUERZEL_MAX}
+                        autoCapitalize="characters"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        enterKeyHint="done"
+                        onBlur={(e) => kuerzelSpeichern(m, e.currentTarget.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') e.currentTarget.blur()
+                        }}
+                      />
+                    </label>
                     <div className="swatches">
                       {FARBWAHL.map((f) => (
                         <button
@@ -188,15 +215,16 @@ export function Settings(props: {
                           style={{ '--m': f.farbe } as CSSProperties}
                           aria-label={f.name}
                           aria-pressed={m.color === f.farbe}
-                          onClick={() => void farbe(m.module, f.farbe)}
+                          onClick={() => void aendern(m.module, { color: f.farbe })}
                         />
                       ))}
-                      {m.eigen && (
-                        <button className="link swatch-reset" onClick={() => void farbe(m.module, null)}>
+                      {(m.eigeneFarbe || m.kuerzel) && (
+                        <button className="link swatch-reset" onClick={() => void aendern(m.module, { color: undefined, kuerzel: undefined })}>
                           Standard wiederherstellen
                         </button>
                       )}
                     </div>
+                    </>
                   )}
                 </li>
               ))}

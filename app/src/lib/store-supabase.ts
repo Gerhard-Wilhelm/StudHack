@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { alsModulWahl, type ModulWahl } from './farben'
 import { folienPfade, idbAblage, vorladenFaellig, type Ablage } from './offline'
 import { hhmm, isoDate, type NewBlock, type StudyBlock } from './plan'
 import type { Store } from './store'
@@ -10,7 +11,7 @@ const PAGE = 1000
 const NOTES_CACHE_KEY = 'studhack.notes'
 const MODULES_CACHE_KEY = 'studhack.modules'
 const BLOCKS_CACHE_KEY = 'studhack.blocks'
-const COLORS_CACHE_KEY = 'studhack.farben'
+const COLORS_CACHE_KEY = 'studhack.farben'  // Farben und Kürzel
 const VORLADEN_KEY = 'studhack.vorgeladen'
 const SIGNED_URL_SECONDS = 3600
 // Gemerkte Zeiträume des Lernplans, die neuesten zuerst
@@ -198,28 +199,35 @@ export class SupabaseStore implements Store {
     if (error) throw error
   }
 
-  async loadColors(): Promise<Record<string, string>> {
+  async loadModulWahl(): Promise<Record<string, ModulWahl>> {
     try {
-      const { data, error } = await this.sb.from('module_colors').select('module,color')
+      const mit = await this.sb.from('module_colors').select('module,color,kuerzel')
+      // Migration 20261116120000_modulkuerzel noch nicht eingespielt: nur Farben
+      const { data, error } = mit.error ? await this.sb.from('module_colors').select('module,color') : mit
       if (error) throw error
-      const farben = Object.fromEntries((data as { module: string; color: string }[]).map((r) => [r.module, r.color]))
-      writeJson(COLORS_CACHE_KEY, farben)
-      return farben
+      const wahl = alsModulWahl(
+        Object.fromEntries((data as { module: string; color: string | null; kuerzel?: string | null }[]).map((r) => [r.module, r])),
+      )
+      writeJson(COLORS_CACHE_KEY, wahl)
+      return wahl
     } catch {
-      // Ohne Netz oder ohne Migration 20261115120000_modulfarben: letzter Stand oder Standardfarben
-      return readJson<Record<string, string>>(COLORS_CACHE_KEY, {})
+      // Ohne Netz oder ohne Migration 20261115120000_modulfarben: letzter Stand oder Standard
+      return alsModulWahl(readJson<unknown>(COLORS_CACHE_KEY, {}))
     }
   }
 
-  async saveColor(module: string, color: string | null): Promise<void> {
-    const { error } = color
-      ? await this.sb.from('module_colors').upsert({ module, color }, { onConflict: 'user_id,module' })
-      : await this.sb.from('module_colors').delete().eq('module', module)
+  async saveModulWahl(module: string, wahl: ModulWahl): Promise<void> {
+    const leer = !wahl.color && !wahl.kuerzel
+    const { error } = leer
+      ? await this.sb.from('module_colors').delete().eq('module', module)
+      : await this.sb
+          .from('module_colors')
+          .upsert({ module, color: wahl.color ?? null, kuerzel: wahl.kuerzel ?? null }, { onConflict: 'user_id,module' })
     if (error) throw error
-    const farben = readJson<Record<string, string>>(COLORS_CACHE_KEY, {})
-    if (color) farben[module] = color
-    else delete farben[module]
-    writeJson(COLORS_CACHE_KEY, farben)
+    const alle = alsModulWahl(readJson<unknown>(COLORS_CACHE_KEY, {}))
+    if (leer) delete alle[module]
+    else alle[module] = wahl
+    writeJson(COLORS_CACHE_KEY, alle)
   }
 
   async loadModules(): Promise<ModuleInfo[]> {
