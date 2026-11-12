@@ -5,7 +5,7 @@
 
 # ./StudHack
 
-*The shortcut through your semester.*
+<img src="docs/slogan-en.svg" width="620" alt="The shortcut through your semester">
 
 A study assistant for university: it downloads course material from Stud.IP,
 turns it into weekly notes in an Obsidian vault with Claude, and brings notes,
