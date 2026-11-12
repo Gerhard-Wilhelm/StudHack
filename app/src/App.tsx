@@ -4,6 +4,7 @@ import { DemoStore } from './lib/store-demo'
 import { SupabaseStore } from './lib/store-supabase'
 import { supabase } from './lib/supabase'
 import { dailyQuota, getReactivated, isWritten, setReactivated } from './lib/exams'
+import { mitEigenen } from './lib/farben'
 import { addDays, addMinutes, isoDate, moduleColors, sortBlocks, weekStart, type StudyBlock } from './lib/plan'
 import { buildQueue, newPerModule, overview, weekCounts } from './lib/queue'
 import { countIntroduced, remainingNew } from './lib/settings'
@@ -54,6 +55,7 @@ export function App() {
   const [notes, setNotes] = useState<NoteSummary[]>([])
   const [notesError, setNotesError] = useState<string | null>(null)
   const [modules, setModules] = useState<ModuleInfo[]>([])
+  const [eigeneFarben, setEigeneFarben] = useState<Record<string, string>>({})
   const [drafts, setDrafts] = useState<Item[]>([])
   const [reactivated, setReactivatedState] = useState<string[]>(getReactivated)
   const [todayBlocks, setTodayBlocks] = useState<StudyBlock[]>([])
@@ -110,6 +112,7 @@ export function App() {
       // ohne Tabelle modules (Migration fehlt) zeigt die App einfach keine Modulinfos
       setModules([])
     }
+    setEigeneFarben(await store.loadColors().catch(() => ({})))
     setLoaded((n) => n + 1)
     // Offline-Modus: alle Notizen im Hintergrund aufs Gerät, höchstens einmal am Tag
     void store.vorladen?.().catch(() => undefined)
@@ -200,7 +203,27 @@ export function App() {
       .map((m) => ({ module: m, name: moduleNames[m], exam: exams[m] ?? null }))
       .sort((a, b) => (a.exam ?? '9999').localeCompare(b.exam ?? '9999') || a.module.localeCompare(b.module, 'de'))
   }, [modules, cards, moduleNames, exams])
-  const colors = useMemo(() => moduleColors(planModules.map((m) => m.module)), [planModules])
+  const colors = useMemo(
+    () => mitEigenen(moduleColors(planModules.map((m) => m.module)), eigeneFarben),
+    [planModules, eigeneFarben],
+  )
+  const standardFarben = useMemo(() => moduleColors(planModules.map((m) => m.module)), [planModules])
+
+  async function changeColor(module: string, color: string | null) {
+    const vorher = eigeneFarben
+    setEigeneFarben((f) => {
+      const neu = { ...f }
+      if (color) neu[module] = color
+      else delete neu[module]
+      return neu
+    })
+    try {
+      await store?.saveColor(module, color)
+    } catch (e) {
+      setEigeneFarben(vorher)
+      throw e
+    }
+  }
 
   function weekRows(module: string): WeekRow[] {
     const counts = cards ? weekCounts(cards, module, now) : new Map()
@@ -289,6 +312,14 @@ export function App() {
         written={written.map((m) => ({ module: m, name: moduleNames[m], active: reactivated.includes(m) }))}
         onToggleWritten={toggleReactivated}
         bilderVorladen={store.bilderVorladen?.bind(store)}
+        modules={planModules.map((m) => ({
+          module: m.module,
+          name: m.name,
+          color: colors[m.module],
+          eigen: m.module in eigeneFarben,
+          standard: standardFarben[m.module],
+        }))}
+        onChangeColor={changeColor}
         onBack={() => setView({ name: 'home' })}
         onLogout={logout}
         onResetDemo={() => {

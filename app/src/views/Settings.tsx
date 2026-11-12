@@ -1,7 +1,31 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { PushSettings } from '../components/PushSettings'
+import { FARBWAHL } from '../lib/farben'
 import { fehlerText } from '../lib/offline'
 import { DEFAULT_NEW_LIMIT, getNewLimit, introducedToday, setNewLimit } from '../lib/settings'
+
+type Reiter = 'lernen' | 'module' | 'mitteilungen' | 'offline' | 'konto'
+
+const REITER_KEY = 'studhack.einstellungen'
+
+function gemerkterReiter(): Reiter {
+  try {
+    return (localStorage.getItem(REITER_KEY) as Reiter | null) ?? 'lernen'
+  } catch {
+    return 'lernen'
+  }
+}
+
+export interface ModulFarbe {
+  module: string
+  name?: string
+  /** aktuelle Farbe, selbst gewählt oder automatisch */
+  color?: string
+  /** true, wenn selbst gewählt */
+  eigen: boolean
+  /** automatische Farbe aus dem Lernplan */
+  standard?: string
+}
 
 export function Settings(props: {
   demo: boolean
@@ -12,10 +36,36 @@ export function Settings(props: {
   onResetDemo: () => void
   /** Offline-Modus: alle Folienbilder aufs Gerät laden (nur mit Supabase) */
   bilderVorladen?: (fortschritt: (fertig: number, gesamt: number) => void) => Promise<number>
+  modules: ModulFarbe[]
+  /** Farbe setzen, null für die automatische Farbe */
+  onChangeColor: (module: string, color: string | null) => Promise<void>
 }) {
   const [limit, setLimit] = useState(getNewLimit())
   const [bilder, setBilder] = useState<string | null>(null)
   const [laedt, setLaedt] = useState(false)
+  const [offen, setOffen] = useState<string | null>(null)
+  const [farbFehler, setFarbFehler] = useState<string | null>(null)
+
+  const reiter: { id: Reiter; titel: string }[] = [
+    { id: 'lernen', titel: 'Lernen' },
+    { id: 'module', titel: 'Module' },
+    ...(props.demo ? [] : [{ id: 'mitteilungen' as const, titel: 'Mitteilungen' }]),
+    ...(props.bilderVorladen ? [{ id: 'offline' as const, titel: 'Offline' }] : []),
+    { id: 'konto', titel: 'Konto' },
+  ]
+  const [aktiv, setAktiv] = useState<Reiter>(() => {
+    const g = gemerkterReiter()
+    return reiter.some((r) => r.id === g) ? g : 'lernen'
+  })
+
+  function waehle(r: Reiter) {
+    setAktiv(r)
+    try {
+      localStorage.setItem(REITER_KEY, r)
+    } catch {
+      // dann eben ohne Merken
+    }
+  }
 
   async function bilderLaden() {
     if (!props.bilderVorladen) return
@@ -27,6 +77,15 @@ export function Settings(props: {
       setBilder(fehlerText(e))
     } finally {
       setLaedt(false)
+    }
+  }
+
+  async function farbe(module: string, color: string | null) {
+    setFarbFehler(null)
+    try {
+      await props.onChangeColor(module, color)
+    } catch (e) {
+      setFarbFehler(`Farbe nicht gespeichert: ${fehlerText(e)}`)
     }
   }
 
@@ -43,66 +102,140 @@ export function Settings(props: {
         <h1 className="title small">Einstellungen</h1>
       </header>
 
-      <section className="setting">
-        <label htmlFor="limit">Neue Karten pro Tag</label>
-        <div className="stepper">
-          <button aria-label="Weniger" onClick={() => change(limit - 5)}>−</button>
-          <input id="limit" type="number" inputMode="numeric" min={0} max={500}
-            value={limit} onChange={(e) => change(Number(e.target.value))} />
-          <button aria-label="Mehr" onClick={() => change(limit + 5)}>+</button>
-        </div>
-        <p className="hint">
-          Standard ist {DEFAULT_NEW_LIMIT}. Heute schon eingeführt: {introducedToday(props.demo ? 'demo' : 'supabase')}.
-          Gezählt wird auf diesem Gerät.
-        </p>
-      </section>
-
-      {!props.demo && <PushSettings />}
-
-      {props.bilderVorladen && (
-        <section className="setting">
-          <label>Offline</label>
-          <p className="hint">
-            Karten und Wochennotizen speichert die App selbst auf diesem Gerät. Folienbilder nur, wenn du sie
-            einmal angesehen hast. Hier lädst du alle auf einmal, am besten im WLAN.
-          </p>
-          <button className="quiet" disabled={laedt} onClick={() => void bilderLaden()}>
-            Folienbilder für offline laden
+      <div className="tabs" role="tablist" aria-label="Bereiche der Einstellungen">
+        {reiter.map((r) => (
+          <button
+            key={r.id}
+            role="tab"
+            id={`reiter-${r.id}`}
+            aria-selected={aktiv === r.id}
+            aria-controls={`bereich-${r.id}`}
+            className={`tab ${aktiv === r.id ? 'is-active' : ''}`}
+            onClick={() => waehle(r.id)}
+          >
+            {r.titel}
           </button>
-          {bilder && <p className="hint" role="status">{bilder}</p>}
-        </section>
-      )}
+        ))}
+      </div>
 
-      {props.written.length > 0 && (
-        <section className="setting">
-          <label>Geschriebene Klausuren</label>
-          <p className="hint">
-            Nach der Klausur fragt die App ein Modul nicht mehr ab. Für eine Wiederholungsprüfung kannst du es
-            wieder einschalten.
-          </p>
-          {props.written.map((w) => (
-            <label key={w.module} className="toggle-row">
-              <input type="checkbox" checked={w.active} onChange={() => props.onToggleWritten(w.module)} />
-              <span>
-                {w.module}
-                {w.name ? `, ${w.name}` : ''} wieder abfragen
-              </span>
-            </label>
-          ))}
-        </section>
-      )}
+      <div role="tabpanel" id={`bereich-${aktiv}`} aria-labelledby={`reiter-${aktiv}`}>
+        {aktiv === 'lernen' && (
+          <>
+            <section className="setting">
+              <label htmlFor="limit">Neue Karten pro Tag</label>
+              <div className="stepper">
+                <button aria-label="Weniger" onClick={() => change(limit - 5)}>−</button>
+                <input id="limit" type="number" inputMode="numeric" min={0} max={500}
+                  value={limit} onChange={(e) => change(Number(e.target.value))} />
+                <button aria-label="Mehr" onClick={() => change(limit + 5)}>+</button>
+              </div>
+              <p className="hint">
+                Standard ist {DEFAULT_NEW_LIMIT}. Heute schon eingeführt: {introducedToday(props.demo ? 'demo' : 'supabase')}.
+                Gezählt wird auf diesem Gerät.
+              </p>
+            </section>
 
-      {props.demo && (
-        <section className="setting">
-          <button className="quiet" onClick={props.onResetDemo}>Demo zurücksetzen</button>
-        </section>
-      )}
+            <section className="setting">
+              <label>Geschriebene Klausuren</label>
+              {props.written.length === 0 ? (
+                <p className="hint">Erscheinen hier nach dem Klausurtermin.</p>
+              ) : (
+                <>
+                  <p className="hint">
+                    Nach der Klausur fragt die App ein Modul nicht mehr ab. Für eine Wiederholungsprüfung kannst du es
+                    wieder einschalten.
+                  </p>
+                  {props.written.map((w) => (
+                    <label key={w.module} className="toggle-row">
+                      <input type="checkbox" checked={w.active} onChange={() => props.onToggleWritten(w.module)} />
+                      <span>
+                        {w.module}
+                        {w.name ? `, ${w.name}` : ''} wieder abfragen
+                      </span>
+                    </label>
+                  ))}
+                </>
+              )}
+            </section>
+          </>
+        )}
 
-      <section className="setting">
-        <button className="quiet" onClick={props.onLogout}>
-          {props.demo ? 'Demo beenden' : 'Abmelden'}
-        </button>
-      </section>
+        {aktiv === 'module' && (
+          <section className="setting">
+            <p className="hint">
+              Farbe für Startseite, Lernplan und Lernkarte. {props.demo ? 'In der Demo nur auf diesem Gerät.' : 'Gilt auf allen Geräten.'}
+            </p>
+            {props.modules.length === 0 && <p className="hint">Noch keine Module.</p>}
+            <ul className="color-list">
+              {props.modules.map((m) => (
+                <li key={m.module} className="color-row" style={{ '--m': m.color } as CSSProperties}>
+                  <button
+                    className="color-head"
+                    aria-expanded={offen === m.module}
+                    onClick={() => setOffen((o) => (o === m.module ? null : m.module))}
+                  >
+                    <span className="color-dot" aria-hidden="true" />
+                    <span className="color-name">{m.module}</span>
+                    {m.name && <span className="color-sub">{m.name}</span>}
+                    <span className="color-state">{m.eigen ? 'eigene Farbe' : 'Standard'}</span>
+                  </button>
+                  {offen === m.module && (
+                    <div className="swatches">
+                      {FARBWAHL.map((f) => (
+                        <button
+                          key={f.farbe}
+                          className="swatch"
+                          style={{ '--m': f.farbe } as CSSProperties}
+                          aria-label={f.name}
+                          aria-pressed={m.color === f.farbe}
+                          onClick={() => void farbe(m.module, f.farbe)}
+                        />
+                      ))}
+                      {m.eigen && (
+                        <button className="link swatch-reset" onClick={() => void farbe(m.module, null)}>
+                          Standard wiederherstellen
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {farbFehler && <p className="error" role="alert">{farbFehler}</p>}
+          </section>
+        )}
+
+        {aktiv === 'mitteilungen' && <PushSettings />}
+
+        {aktiv === 'offline' && (
+          <section className="setting">
+            <label>Offline</label>
+            <p className="hint">
+              Karten und Wochennotizen speichert die App selbst auf diesem Gerät. Folienbilder nur, wenn du sie
+              einmal angesehen hast. Hier lädst du alle auf einmal, am besten im WLAN.
+            </p>
+            <button className="quiet" disabled={laedt} onClick={() => void bilderLaden()}>
+              Folienbilder für offline laden
+            </button>
+            {bilder && <p className="hint" role="status">{bilder}</p>}
+          </section>
+        )}
+
+        {aktiv === 'konto' && (
+          <>
+            {props.demo && (
+              <section className="setting">
+                <button className="quiet" onClick={props.onResetDemo}>Demo zurücksetzen</button>
+              </section>
+            )}
+            <section className="setting">
+              <button className="quiet" onClick={props.onLogout}>
+                {props.demo ? 'Demo beenden' : 'Abmelden'}
+              </button>
+            </section>
+          </>
+        )}
+      </div>
     </main>
   )
 }

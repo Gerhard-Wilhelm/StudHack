@@ -27,6 +27,10 @@ export interface Store {
   loadModules(): Promise<ModuleInfo[]>
   /** Adressen für Folienbilder, Schlüssel wie in der Notiz (<Kürzel>/<Bild>.jpg). */
   resolveImages(paths: string[]): Promise<Record<string, string>>
+  /** Selbst gewählte Modulfarben (Modul zu #rrggbb). Ohne Tabelle oder Netz der letzte bekannte Stand. */
+  loadColors(): Promise<Record<string, string>>
+  /** Farbe für ein Modul setzen, null setzt auf die automatische Farbe zurück. */
+  saveColor(module: string, color: string | null): Promise<void>
   /** Offline-Modus: alle Notizen im Hintergrund auf dem Gerät speichern, höchstens einmal am Tag. */
   vorladen?(): Promise<void>
   /** Offline-Modus: alle Folienbilder laden, damit der Service Worker sie speichert. Gibt die Anzahl zurück. */

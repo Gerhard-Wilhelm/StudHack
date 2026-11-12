@@ -8,6 +8,7 @@ import type { CardStateFields, Item, ModuleInfo, Note, NoteSummary, ReviewRecord
 const KEY = 'studhack.demo'
 const DRAFTS_KEY = 'studhack.demoDrafts'
 const BLOCKS_KEY = 'studhack.demoBlocks'
+const COLORS_KEY = 'studhack.demoFarben'
 
 function emptyState(): CardStateFields {
   return {
@@ -110,6 +111,25 @@ export class DemoStore implements Store {
     this.writeBlocks(this.blocks().filter((b) => b.id !== id))
   }
 
+  async loadColors(): Promise<Record<string, string>> {
+    try {
+      return JSON.parse(localStorage.getItem(COLORS_KEY) ?? '{}') as Record<string, string>
+    } catch {
+      return {}
+    }
+  }
+
+  async saveColor(module: string, color: string | null): Promise<void> {
+    const farben = await this.loadColors()
+    if (color) farben[module] = color
+    else delete farben[module]
+    try {
+      localStorage.setItem(COLORS_KEY, JSON.stringify(farben))
+    } catch {
+      // Demo läuft dann nur bis zum Neuladen
+    }
+  }
+
   async loadModules(): Promise<ModuleInfo[]> {
     // Kopien wie bei Supabase, sonst erkennt React Änderungen nicht
     return DEMO_MODULES.map((m) => ({ ...m }))
@@ -125,6 +145,7 @@ export class DemoStore implements Store {
     try {
       localStorage.removeItem(DRAFTS_KEY)
       localStorage.removeItem(BLOCKS_KEY)
+      localStorage.removeItem(COLORS_KEY)
       localStorage.removeItem(KEY)
     } catch {
       // nichts zu tun

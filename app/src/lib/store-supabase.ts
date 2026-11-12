@@ -10,6 +10,7 @@ const PAGE = 1000
 const NOTES_CACHE_KEY = 'studhack.notes'
 const MODULES_CACHE_KEY = 'studhack.modules'
 const BLOCKS_CACHE_KEY = 'studhack.blocks'
+const COLORS_CACHE_KEY = 'studhack.farben'
 const VORLADEN_KEY = 'studhack.vorgeladen'
 const SIGNED_URL_SECONDS = 3600
 // Gemerkte Zeiträume des Lernplans, die neuesten zuerst
@@ -195,6 +196,30 @@ export class SupabaseStore implements Store {
   async deleteBlock(id: number): Promise<void> {
     const { error } = await this.sb.from('study_blocks').delete().eq('id', id)
     if (error) throw error
+  }
+
+  async loadColors(): Promise<Record<string, string>> {
+    try {
+      const { data, error } = await this.sb.from('module_colors').select('module,color')
+      if (error) throw error
+      const farben = Object.fromEntries((data as { module: string; color: string }[]).map((r) => [r.module, r.color]))
+      writeJson(COLORS_CACHE_KEY, farben)
+      return farben
+    } catch {
+      // Ohne Netz oder ohne Migration 20261115120000_modulfarben: letzter Stand oder Standardfarben
+      return readJson<Record<string, string>>(COLORS_CACHE_KEY, {})
+    }
+  }
+
+  async saveColor(module: string, color: string | null): Promise<void> {
+    const { error } = color
+      ? await this.sb.from('module_colors').upsert({ module, color }, { onConflict: 'user_id,module' })
+      : await this.sb.from('module_colors').delete().eq('module', module)
+    if (error) throw error
+    const farben = readJson<Record<string, string>>(COLORS_CACHE_KEY, {})
+    if (color) farben[module] = color
+    else delete farben[module]
+    writeJson(COLORS_CACHE_KEY, farben)
   }
 
   async loadModules(): Promise<ModuleInfo[]> {

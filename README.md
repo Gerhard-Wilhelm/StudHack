@@ -53,6 +53,7 @@ Trockenlauf (der Generator ruft mit `--notiz` oder `--modul` trotzdem die API au
 | `modules` | Modulübersicht, voller Name, Klausurtermin | Lesemodus-Importer | App |
 | `study_blocks` | Lernplan: 2-Stunden-Blöcke mit Modul, Tag, Uhrzeit, erledigt | App | App, Kalender |
 | `push_subscriptions` | Geräte für Mitteilungen mit Schaltern je Art | App | Edge Function |
+| `module_colors` | selbst gewählte Farbe je Modul | App (Einstellungen) | App |
 | `push_sent` | verschickte Mitteilungen gegen Doppelte | Edge Function | |
 | Bucket `folien` | Folienbilder, privat, `<user_id>/<Kürzel>/<Bild>.jpg` | Lesemodus-Importer | App (zeitlich begrenzte Links) |
 
@@ -73,6 +74,7 @@ Migrationen in `supabase/migrations/`, in dieser Reihenfolge im SQL Editor ausf�
 7. `20261112120000_mitteilungen.sql`: push_subscriptions, push_sent
 8. `20261113120000_mitteilungen_rechte.sql`: Leserechte der Edge Function erinnerungen
 9. `20261114120000_rechenaufgaben.sql`: Spalte eingaben in items
+10. `20261115120000_modulfarben.sql`: module_colors, selbst gewählte Modulfarben
 
 ## Einrichtung von null
 
